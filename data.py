@@ -18,12 +18,13 @@ def make_header(tr_elements):
 
 def get_data(tr_elements, col):
     # Since out first row is the header, data is stored on the second row onwards
+    print(len(tr_elements))
     for j in range(1, len(tr_elements)):
         # T is our j'th row
         T = tr_elements[j]
 
         # If row is not of size 10, the //tr data is not from our table
-        if len(T) != 10:
+        if len(T) != 10 or j == 29:
             break
 
         # i is the index of our column
