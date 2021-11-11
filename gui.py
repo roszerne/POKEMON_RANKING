@@ -162,15 +162,19 @@ class Gui():
             chosen = self.scale_var[stats_pair].get()
             if not chosen:
                 tkinter.messagebox.showinfo("Error", "Choose all")
+                break
 
-            if self.scale_buttons[stats_pair][0].cget('bg') == self.scale_color:
+            elif self.scale_buttons[stats_pair][0].cget('bg') == self.scale_color:
                 self.chosen_scale.append((stats_pair[0], stats_pair[1], chosen))
+
             elif self.scale_buttons[stats_pair][1].cget('bg') == self.scale_color:
                 self.chosen_scale.append((stats_pair[1], stats_pair[0], chosen))
+
             else:
                 tkinter.messagebox.showinfo("Error", "Choose all")
+                break
+
         print(self.chosen_scale)
-        self.open_ranking_window()
 
     def open_ranking_window(self):
         for widget in self.parent.winfo_children():
