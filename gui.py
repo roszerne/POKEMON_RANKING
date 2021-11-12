@@ -32,7 +32,7 @@ class Gui():
         self.scale_comboboxes = {}
         self.scale_var = {}
         self.chosen_scale = []
-        self.scale_color = '#68C0DC'
+        self.scale_color = '#309BDC'
         self.stats = ['Attack', 'Defense', 'HP', 'Speed']
         self.scale = ['Equal importance', 'Somewhat more important', 'Much more important', 'Very much important',
                       'Absolutely more important']
@@ -85,7 +85,7 @@ class Gui():
             image_url = 'https://img.pokemondb.net/artwork/' + name.lower() + '.jpg'
             response = requests.get(image_url)
             image = io.BytesIO(response.content)
-            image = Image.open(image).resize((100, 100))
+            image = Image.open(image).resize((120, 120))
             pokemon_image = ImageTk.PhotoImage(image)
 
             var = tk.IntVar(0)
@@ -98,7 +98,7 @@ class Gui():
                                 image=pokemon_image,
                                 compound='left',
                                 bg='white',
-                                font=("Arial", 10)
+                                font=("Arial", 12)
                                 )
             cb.grid(sticky="w")  # to keep it aligned
             self.checkbuttons[name] = cb
