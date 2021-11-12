@@ -3,8 +3,10 @@ from tkinter import ttk
 import requests, io, itertools, tkinter.messagebox
 from PIL import ImageTk, Image
 import data
+from Pokemon import Pokemon
 import pandas as pd
-
+from ranking import Ranking
+import numpy as np
 
 class Gui():
     def __init__(self, parent):
@@ -19,7 +21,7 @@ class Gui():
         self.container = tk.Frame(parent, bg='white')
         self.canvas = tk.Canvas(self.container, width=self.size, height=self.size, bg='white', highlightthickness=0)
 
-        self.set_data(20)
+        self.set_data(10)
 
         self.add_scrollbar()  # scrollbar jest tylko w 1. oknie bo potem sie psulo i po prostu robie tak zeby sie miescilo xd
         self.chosen_pokemons = []
@@ -31,11 +33,11 @@ class Gui():
         self.scale_buttons = {}
         self.scale_comboboxes = {}
         self.scale_var = {}
-        self.chosen_scale = []
         self.scale_color = '#309BDC'
-        self.stats = ['Attack', 'Defense', 'HP', 'Speed']
+        self.stats = ['HP', 'Attack', 'Defense', 'Speed']
         self.scale = ['Equal importance', 'Somewhat more important', 'Much more important', 'Very much important',
                       'Absolutely more important']
+        self.chosen_scale = np.ones((len(self.stats),len(self.stats)),dtype='double') # macierz kryteriów lvl 2
 
         self.set_checkboxes()
         self.set_ok_button(1)
@@ -105,11 +107,13 @@ class Gui():
 
     #po nacisnieciu pierwszego okej
     def get_pokemons(self):
-        for name in self.dataframe['Name']:
+        for index, row in self.dataframe.iterrows():
+            name = row['Name']
             if " " in name:
                 continue
             if self.checkbuttons_var[name].get() and name not in self.chosen_pokemons:
-                self.chosen_pokemons.append(name)
+                #pokemon = self.dataframe.loc[self.dataframe['Name'] == name]
+                self.chosen_pokemons.append(Pokemon(index,row)) # tworze obiekt klasy Pokemon
                 print("Dodaj tego pokemona" + name)
 
         if len(self.chosen_pokemons) < 5 or len(self.chosen_pokemons) > 9:
@@ -165,16 +169,29 @@ class Gui():
                 break
 
             elif self.scale_buttons[stats_pair][0].cget('bg') == self.scale_color:
-                self.chosen_scale.append((stats_pair[0], stats_pair[1], chosen))
+                val = self.scale.index(chosen)
+                val = (val - 1 ) * 2 + 1
+                ind1 = self.stats.index(stats_pair[0])
+                ind2 = self.stats.index(stats_pair[1])
+                self.chosen_scale[ind1,ind2] = val
+                self.chosen_scale[ind2,ind1] = 1 / val
 
             elif self.scale_buttons[stats_pair][1].cget('bg') == self.scale_color:
-                self.chosen_scale.append((stats_pair[1], stats_pair[0], chosen))
+                val = self.scale.index(chosen)
+                val = (val - 1 ) * 2 + 1
+                ind1 = self.stats.index(stats_pair[1])
+                ind2 = self.stats.index(stats_pair[0])
+                self.chosen_scale[ind1,ind2] = val
+                self.chosen_scale[ind2,ind1] = 1 / val
 
             else:
                 tkinter.messagebox.showinfo("Error", "Choose all")
                 break
 
         print(self.chosen_scale)
+        rank = Ranking(self.chosen_pokemons,self.chosen_scale)
+        rank.AHP()
+
 
     def open_ranking_window(self):
         for widget in self.parent.winfo_children():

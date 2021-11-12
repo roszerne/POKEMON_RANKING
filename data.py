@@ -24,7 +24,7 @@ def get_data(tr_elements, col):
         T = tr_elements[j]
 
         # If row is not of size 10, the //tr data is not from our table
-        if len(T) != 10 or j == 29:
+        if len(T) != 10:
             break
 
         # i is the index of our column
@@ -54,5 +54,6 @@ def data():
     get_data(tr_elements, col)
     Dict={title:column for (title,column) in col}
     df=pd.DataFrame(Dict)
+    df = df.drop(columns = ['Type', 'Total', 'Sp. Atk', 'Sp. Def']) # remove type and total column
     df.to_json('PokemonData.json')
 
