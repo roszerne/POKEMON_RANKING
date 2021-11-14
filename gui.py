@@ -21,7 +21,7 @@ class Gui():
         self.container = tk.Frame(parent, bg='white')
         self.canvas = tk.Canvas(self.container, width=self.size, height=self.size, bg='white', highlightthickness=0)
 
-        self.set_data(10)
+        self.set_data(197)
 
         self.add_scrollbar()  # scrollbar jest tylko w 1. oknie bo potem sie psulo i po prostu robie tak zeby sie miescilo xd
         self.chosen_pokemons = []
@@ -45,7 +45,7 @@ class Gui():
         self.canvas.pack(side="left", fill="both", expand=True)
 
     def set_data(self, how_many):
-        data.data()
+        #data.data(how_many)
         df = pd.read_json('PokemonData.json')
         df = df.set_index(['#'])
         self.dataframe = df.head(how_many)
@@ -83,7 +83,8 @@ class Gui():
             # bo wtedy nie wiem jak strona wyglada
             if " " in name:
                 continue
-
+            if "\'" in name:
+                name = name.replace("\'","")
             image_url = 'https://img.pokemondb.net/artwork/' + name.lower() + '.jpg'
             response = requests.get(image_url)
             image = io.BytesIO(response.content)
@@ -112,7 +113,6 @@ class Gui():
             if " " in name:
                 continue
             if self.checkbuttons_var[name].get() and name not in self.chosen_pokemons:
-                #pokemon = self.dataframe.loc[self.dataframe['Name'] == name]
                 self.chosen_pokemons.append(Pokemon(index,row)) # tworze obiekt klasy Pokemon
                 print("Dodaj tego pokemona" + name)
 
@@ -170,7 +170,7 @@ class Gui():
 
             elif self.scale_buttons[stats_pair][0].cget('bg') == self.scale_color:
                 val = self.scale.index(chosen)
-                val = (val - 1 ) * 2 + 1
+                val = val * 2 + 1
                 ind1 = self.stats.index(stats_pair[0])
                 ind2 = self.stats.index(stats_pair[1])
                 self.chosen_scale[ind1,ind2] = val
@@ -178,7 +178,7 @@ class Gui():
 
             elif self.scale_buttons[stats_pair][1].cget('bg') == self.scale_color:
                 val = self.scale.index(chosen)
-                val = (val - 1 ) * 2 + 1
+                val = val* 2 + 1
                 ind1 = self.stats.index(stats_pair[1])
                 ind2 = self.stats.index(stats_pair[0])
                 self.chosen_scale[ind1,ind2] = val
@@ -188,7 +188,7 @@ class Gui():
                 tkinter.messagebox.showinfo("Error", "Choose all")
                 break
 
-        print(self.chosen_scale)
+        print('Skala: ', self.chosen_scale)
         rank = Ranking(self.chosen_pokemons,self.chosen_scale)
         rank.AHP()
 

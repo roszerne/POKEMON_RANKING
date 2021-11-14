@@ -19,31 +19,30 @@ class Ranking:
     def eigenValues(self):
         for i in range (self.criterions):      
             A = self.C[i,:,:]
-           # print("C ",A)
-           # print("SHAPE ",A.shape)
             w, v = LA.eig(A)
             w = abs(w)
-           # print("w: ",w)
-           # print("v: ",v)
+            v = abs(v)
             ind = np.argmax(w) # znajdź największą wartość własną 
             self.priorities[:,i] = v[:,ind]
-        self.priorities = self.priorities / LA.norm(self.priorities) # znormalizuj wektory
+        self.priorities = self.priorities / self.priorities.sum() # znormalizuj wektory
     def secondLevelMatrix(self):
         w, v = LA.eig(self.scale)
         w = abs(w)
+        v = abs(v)
         ind = np.argmax(w) # znajdź największą wartość własną 
         self.priority_vector = v[:,ind]
-        self.priority_vector = self.priority_vector / LA.norm(self.priority_vector) # znormalizuj wektory
+        self.priority_vector = self.priority_vector / self.priority_vector.sum() # znormalizuj wektory
     def AHP(self):
         # create matrices of criterias
         self.createCriterion()
-        #print(self.C)
+        print('C: ',self.C)
         # Oblicz wartości własne
         self.eigenValues()      
-        print(self.priorities)
+        print('Priorities: ',self.priorities)
         # second-level PC matrix
         self.secondLevelMatrix()
-        #print(self.scale)
-        #print(self.priority_vector)
+        print('C2: ',self.priority_vector)
         # Final rank
-        #print(np.dot(self.priorities,self.priority_vector))
+        final = np.dot(self.priorities,self.priority_vector)
+        final = final / final.sum()
+        print('Final: ',final)
