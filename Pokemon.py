@@ -7,6 +7,8 @@ class Pokemon:
         self.crit[1] = dataFrame.iloc[2] # attack
         self.crit[2] = dataFrame.iloc[3] # defense
         self.crit[3] = dataFrame.iloc[4] # speed
+        print("x")
+        print(self.crit)
         '''
         self.HP = dataFrame.iloc[1]
         self.attack = dataFrame.iloc[2]

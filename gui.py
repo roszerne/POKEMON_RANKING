@@ -21,7 +21,7 @@ class Gui():
         self.container = tk.Frame(parent, bg='white')
         self.canvas = tk.Canvas(self.container, width=self.size, height=self.size, bg='white', highlightthickness=0)
 
-        self.set_data(197)
+        self.set_data(19)
 
         self.add_scrollbar()  # scrollbar jest tylko w 1. oknie bo potem sie psulo i po prostu robie tak zeby sie miescilo xd
         self.chosen_pokemons = []
@@ -45,10 +45,11 @@ class Gui():
         self.canvas.pack(side="left", fill="both", expand=True)
 
     def set_data(self, how_many):
-        #data.data(how_many)
+        data.data(how_many)
         df = pd.read_json('PokemonData.json')
         df = df.set_index(['#'])
         self.dataframe = df.head(how_many)
+        print(self.dataframe)
 
         '''
         no to trzeba ogarnac, bo dopiero teraz zobaczylam ze sie do pewnego momentu wyswietlaja bo robilam na malych liczbach
@@ -69,6 +70,7 @@ class Gui():
         button1.pack()
 
     def add_scrollbar(self):
+
         scrollbar = tk.Scrollbar(self.container, orient="vertical", command=self.canvas.yview)
 
         self.scrollable_frame = tk.Frame(self.canvas, bg='white')
@@ -96,7 +98,7 @@ class Gui():
             self.checkbuttons_images[name] = pokemon_image
             cb = tk.Checkbutton(self.scrollable_frame,
                                 variable=var,
-                                text="          " + name + "   ",
+                                text= self.get_checkbutton_text(i),
                                 offvalue=0,
                                 image=pokemon_image,
                                 compound='left',
@@ -105,6 +107,7 @@ class Gui():
                                 )
             cb.grid(sticky="w")  # to keep it aligned
             self.checkbuttons[name] = cb
+            # self.checkboxes_text = tk.Text
 
     #po nacisnieciu pierwszego okej
     def get_pokemons(self):
@@ -112,6 +115,7 @@ class Gui():
             name = row['Name']
             if " " in name:
                 continue
+            #teraz ten drugi warunek nie dziala
             if self.checkbuttons_var[name].get() and name not in self.chosen_pokemons:
                 self.chosen_pokemons.append(Pokemon(index,row)) # tworze obiekt klasy Pokemon
                 print("Dodaj tego pokemona" + name)
@@ -120,6 +124,23 @@ class Gui():
             tkinter.messagebox.showinfo("Error", "Wrong number")
         else:
             self.open_scale_window()
+
+    def get_checkbutton_text(self, i):
+        res = f"{str(self.dataframe.iloc[i][0]).replace(' ', '') : ^100}"
+        res += "\n\n"
+        for j in range(1, 4):
+            res += f"{self.stats[j]}: {str(self.dataframe.iloc[i][j]) : ^10}" + "  "
+
+        # res = f"{'Name' : ^10}{str(self.dataframe.iloc[i][0]).replace(' ' , '' ) :>10}"
+        #  res += "\n"
+        # for j in range(1, 4):
+        #     res += f"{self.stats[j] : ^5}{str(self.dataframe.iloc[i][j]).replace(' ' , '' ) :>10}"
+        #      res+= "\n"
+
+        # return "          " + self.dataframe.iloc[i].to_string()
+        return res
+
+
 
     def open_scale_window(self):
 
@@ -188,31 +209,45 @@ class Gui():
                 tkinter.messagebox.showinfo("Error", "Choose all")
                 break
 
-        print('Skala: ', self.chosen_scale)
+
         rank = Ranking(self.chosen_pokemons,self.chosen_scale)
-        rank.AHP()
+        self.ranking = rank.AHP()
+        print(self.ranking)
+
+        self.open_ranking_window()
 
 
     def open_ranking_window(self):
         for widget in self.parent.winfo_children():
             widget.destroy()
 
+        self.container = tk.Frame(self.parent, bg='white')
+        self.canvas = tk.Canvas(self.container, width=self.size, height=self.size, bg='white', highlightthickness=0)
+        self.add_scrollbar()
+
         numbers = []
-        ranking = []
+        sorted_ranking = sorted(self.ranking, reverse=True)
+        print(sorted_ranking)
         ranking_labels = []
+        pokemon_images = []
 
-        '''
-        to jest na pewno do zrobienia, tak zeby jeszcze zdjecia bylo widac i wgl
-        '''
         for i in range(len(self.chosen_pokemons)):
-            coord_y = (i + 1) * 80
+            result = sorted_ranking[i]
+            idx, = np.where(self.ranking == result)
+            pokemon = self.chosen_pokemons[idx[0]]
             font_size = 15
-            numbers.append(tk.Label(text="{}".format(i + 1), font=("Arial", font_size), bg='white', relief='ridge'))
-            numbers[i].place(x=20, y=coord_y)
-            ranking.append("JAKIS POKEMON")
+            numbers.append(tk.Label(self.scrollable_frame, text="{}".format(i + 1), font=("Arial", font_size), bg='white', relief='ridge'))
+            numbers[i].grid(column = 1, row = i, padx = 10)
 
-            ranking_labels.append(tk.Button(text=ranking[i], font=("Arial", font_size), bg='white'), )
-            ranking_labels[i].place(x=70, y=coord_y)
+            pokemon_images_label = tk.Label(self.scrollable_frame, image = self.checkbuttons_images[pokemon.name])
+            pokemon_images.append(pokemon_images_label)
+            pokemon_images[i].grid(column = 2, row = i, padx = 10, pady = 10)
+
+            ranking_labels.append(tk.Button(self.scrollable_frame, text=pokemon.name + ' ' + str(result), font=("Arial", font_size), bg='white'))
+            ranking_labels[i].grid(column = 3, row = i, padx = 10)
+
+        self.container.pack()
+        self.canvas.pack(side="left", fill="both", expand=True)
 
     def delete_old_window(self):
         self.canvas.delete('all')
