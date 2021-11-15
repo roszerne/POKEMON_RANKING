@@ -1,19 +1,26 @@
 import tkinter as tk
 from tkinter import ttk
-import requests, io, itertools, tkinter.messagebox
+
+import io
+import itertools
+import numpy as np
+import pandas as pd
+import requests
+import tkinter.messagebox
 from PIL import ImageTk, Image
+
 import data
 from Pokemon import Pokemon
-import pandas as pd
 from ranking import Ranking
-import numpy as np
 
-class Gui():
+
+class Gui:
     def __init__(self, parent):
         self.size = 600
         self.parent = parent
         self.parent.geometry("{}x{}".format(self.size, self.size))
         self.parent.config(bg='white')
+        self.parent.resizable(False, False)
 
         self.url_images = 'https://img.pokemondb.net/artwork/'
         self.dataframe = None
@@ -21,9 +28,10 @@ class Gui():
         self.container = tk.Frame(parent, bg='white')
         self.canvas = tk.Canvas(self.container, width=self.size, height=self.size, bg='white', highlightthickness=0)
 
-        self.set_data(19)
+        self.set_data(100)
 
-        self.add_scrollbar()  # scrollbar jest tylko w 1. oknie bo potem sie psulo i po prostu robie tak zeby sie miescilo xd
+        self.scrollable_frame = None
+        self.add_scrollbar()
         self.chosen_pokemons = []
         self.checkbuttons_var = {}
         self.checkbuttons_images = {}
@@ -37,7 +45,8 @@ class Gui():
         self.stats = ['HP', 'Attack', 'Defense', 'Speed']
         self.scale = ['Equal importance', 'Somewhat more important', 'Much more important', 'Very much important',
                       'Absolutely more important']
-        self.chosen_scale = np.ones((len(self.stats),len(self.stats)),dtype='double') # macierz kryteriów lvl 2
+        self.chosen_scale = np.ones((len(self.stats), len(self.stats)), dtype='double')  # macierz kryteriów lvl 2
+        self.ranking = []
 
         self.set_checkboxes()
         self.set_ok_button(1)
@@ -51,16 +60,10 @@ class Gui():
         self.dataframe = df.head(how_many)
         print(self.dataframe)
 
-        '''
-        no to trzeba ogarnac, bo dopiero teraz zobaczylam ze sie do pewnego momentu wyswietlaja bo robilam na malych liczbach
-        no i nawet pikachu nie ma wiec cos jest nie tak
-        '''
-
     def set_ok_button(self, i):
         ok_button = tk.PhotoImage(file="okbutton--1-.png")
         img_label = tk.Label(image=ok_button)
         img_label.image = ok_button
-        # no to jest slabe te ify ale jak dawalam nazwe funkcji to sie psulo no wiec zostawiam
         if i == 1:
             button1 = tk.Button(self.parent, image=ok_button, command=lambda: self.get_pokemons(), borderwidth=0,
                                 bg='white')
@@ -82,15 +85,14 @@ class Gui():
 
     def set_checkboxes(self):
         for i, name in enumerate(self.dataframe['Name']):
-            # bo wtedy nie wiem jak strona wyglada
             if " " in name:
                 continue
             if "\'" in name:
-                name = name.replace("\'","")
+                name = name.replace("\'", "")
             image_url = 'https://img.pokemondb.net/artwork/' + name.lower() + '.jpg'
             response = requests.get(image_url)
             image = io.BytesIO(response.content)
-            image = Image.open(image).resize((120, 120))
+            image = Image.open(image).resize((110, 110))
             pokemon_image = ImageTk.PhotoImage(image)
 
             var = tk.IntVar(0)
@@ -98,27 +100,24 @@ class Gui():
             self.checkbuttons_images[name] = pokemon_image
             cb = tk.Checkbutton(self.scrollable_frame,
                                 variable=var,
-                                text= self.get_checkbutton_text(i),
+                                text=self.get_checkbutton_text(i),
                                 offvalue=0,
                                 image=pokemon_image,
                                 compound='left',
                                 bg='white',
-                                font=("Arial", 12)
+                                font=("Arial", 11)
                                 )
             cb.grid(sticky="w")  # to keep it aligned
             self.checkbuttons[name] = cb
-            # self.checkboxes_text = tk.Text
 
-    #po nacisnieciu pierwszego okej
+    # po nacisnieciu pierwszego okej
     def get_pokemons(self):
         for index, row in self.dataframe.iterrows():
             name = row['Name']
             if " " in name:
                 continue
-            #teraz ten drugi warunek nie dziala
-            if self.checkbuttons_var[name].get() and name not in self.chosen_pokemons:
-                self.chosen_pokemons.append(Pokemon(index,row)) # tworze obiekt klasy Pokemon
-                print("Dodaj tego pokemona" + name)
+            if self.checkbuttons_var[name].get() and not any(pokemon.name == name for pokemon in self.chosen_pokemons):
+                self.chosen_pokemons.append(Pokemon(index, row))  # tworze obiekt klasy Pokemon
 
         if len(self.chosen_pokemons) < 5 or len(self.chosen_pokemons) > 9:
             tkinter.messagebox.showinfo("Error", "Wrong number")
@@ -128,19 +127,17 @@ class Gui():
     def get_checkbutton_text(self, i):
         res = f"{str(self.dataframe.iloc[i][0]).replace(' ', '') : ^100}"
         res += "\n\n"
-        for j in range(1, 4):
-            res += f"{self.stats[j]}: {str(self.dataframe.iloc[i][j]) : ^10}" + "  "
+        for j in range(4):
+            res += f"{self.stats[j]}: {str(self.dataframe.iloc[i][j + 1]) : ^10}" + "  "
 
-        # res = f"{'Name' : ^10}{str(self.dataframe.iloc[i][0]).replace(' ' , '' ) :>10}"
-        #  res += "\n"
-        # for j in range(1, 4):
-        #     res += f"{self.stats[j] : ^5}{str(self.dataframe.iloc[i][j]).replace(' ' , '' ) :>10}"
-        #      res+= "\n"
+        # res = f"{'Name' : ^10}{str(self.dataframe.iloc[i][0]).replace(' ', '') :>10}"
+        # res += "\n"
+        # for j in range(4):
+        #     res += f"{self.stats[j] : ^5}{str(self.dataframe.iloc[i][j + 1]).replace(' ', '') :>10}"
+        #     res += "\n"
 
         # return "          " + self.dataframe.iloc[i].to_string()
         return res
-
-
 
     def open_scale_window(self):
 
@@ -161,12 +158,12 @@ class Gui():
         scale_combobox = ttk.Combobox(self.parent, textvariable=selected, height=4, font=("Arial", 10), width=20)
         scale_combobox['values'] = self.scale
         scale_combobox['state'] = 'readonly'
-        y_combobox = 10 + 83.5 * i  #no to jest wyliczone poprzez wielokrotne eksperymenty, to jest chyba najbardziej rowne jak moze byc xd
+        y_combobox = 10 + 83.5 * i
         scale_combobox.place(x=400, y=y_combobox)
         self.scale_var[stat] = selected
         self.scale_comboboxes[stat] = scale_combobox
 
-    #przyciski z kryteriami
+    # przyciski z kryteriami
     def create_buttons(self, stat, i):
         button1 = tk.Button(text=stat[0], height=1, width=15, font=("Arial", 10), bg='white', bd=3, relief='ridge')
         button2 = tk.Button(text=stat[1], height=1, width=15, font=("Arial", 10), bg='white', bd=3, relief='ridge')
@@ -178,9 +175,8 @@ class Gui():
 
     def color_change(self, stat, i):
         self.scale_buttons[stat][i].configure(bg=self.scale_color)
-        self.scale_buttons[stat][(i + 1) % 2].configure(bg='white') #jak przyciskasz jeden to ten drugi sie zmienia
+        self.scale_buttons[stat][(i + 1) % 2].configure(bg='white')  # jak przyciskasz jeden to ten drugi sie zmienia
 
-    # tworze tablice ktora przyda sie potem - (wazniejsze kryterium, mniej wazne, i to co wybrane ze skali)
     def get_scale(self):
         for stats_pair in itertools.combinations(self.stats, 2):
 
@@ -194,28 +190,26 @@ class Gui():
                 val = val * 2 + 1
                 ind1 = self.stats.index(stats_pair[0])
                 ind2 = self.stats.index(stats_pair[1])
-                self.chosen_scale[ind1,ind2] = val
-                self.chosen_scale[ind2,ind1] = 1 / val
+                self.chosen_scale[ind1, ind2] = val
+                self.chosen_scale[ind2, ind1] = 1 / val
 
             elif self.scale_buttons[stats_pair][1].cget('bg') == self.scale_color:
                 val = self.scale.index(chosen)
-                val = val* 2 + 1
+                val = val * 2 + 1
                 ind1 = self.stats.index(stats_pair[1])
                 ind2 = self.stats.index(stats_pair[0])
-                self.chosen_scale[ind1,ind2] = val
-                self.chosen_scale[ind2,ind1] = 1 / val
+                self.chosen_scale[ind1, ind2] = val
+                self.chosen_scale[ind2, ind1] = 1 / val
 
             else:
                 tkinter.messagebox.showinfo("Error", "Choose all")
                 break
 
-
-        rank = Ranking(self.chosen_pokemons,self.chosen_scale)
+        rank = Ranking(self.chosen_pokemons, self.chosen_scale)
         self.ranking = rank.AHP()
         print(self.ranking)
 
         self.open_ranking_window()
-
 
     def open_ranking_window(self):
         for widget in self.parent.winfo_children():
@@ -225,9 +219,11 @@ class Gui():
         self.canvas = tk.Canvas(self.container, width=self.size, height=self.size, bg='white', highlightthickness=0)
         self.add_scrollbar()
 
+        # tk.Label(self.scrollable_frame, text='RESULTS: ', font=("Arial", 20), bg='white').grid(row=0, column=3,
+        #                                                                                              pady=10)
+
         numbers = []
         sorted_ranking = sorted(self.ranking, reverse=True)
-        print(sorted_ranking)
         ranking_labels = []
         pokemon_images = []
 
@@ -235,16 +231,20 @@ class Gui():
             result = sorted_ranking[i]
             idx, = np.where(self.ranking == result)
             pokemon = self.chosen_pokemons[idx[0]]
-            font_size = 15
-            numbers.append(tk.Label(self.scrollable_frame, text="{}".format(i + 1), font=("Arial", font_size), bg='white', relief='ridge'))
-            numbers[i].grid(column = 1, row = i, padx = 10)
+            font_size = 13
+            numbers.append(
+                tk.Label(self.scrollable_frame, text="{}".format(i + 1), font=("Arial", font_size), bg='white', bd=0))
+            numbers[i].grid(column=1, row=i + 1, padx=10)
 
-            pokemon_images_label = tk.Label(self.scrollable_frame, image = self.checkbuttons_images[pokemon.name])
+            pokemon_images_label = tk.Label(self.scrollable_frame, image=self.checkbuttons_images[pokemon.name], bd=0)
             pokemon_images.append(pokemon_images_label)
-            pokemon_images[i].grid(column = 2, row = i, padx = 10, pady = 10)
+            pokemon_images[i].grid(column=2, row=i + 1, padx=10, pady=10)
 
-            ranking_labels.append(tk.Button(self.scrollable_frame, text=pokemon.name + ' ' + str(result), font=("Arial", font_size), bg='white'))
-            ranking_labels[i].grid(column = 3, row = i, padx = 10)
+            ranking_labels.append(
+                tk.Button(self.scrollable_frame, text=pokemon.name + ':   ' + str(round(result, 3)),
+                          font=("Arial", font_size),
+                          bg='white', bd=0))
+            ranking_labels[i].grid(column=3, row=i + 1, padx=10)
 
         self.container.pack()
         self.canvas.pack(side="left", fill="both", expand=True)
@@ -256,6 +256,6 @@ class Gui():
 
 
 root = tk.Tk()
-
+root.title("Pokemon Ranking")
 gui = Gui(root)
 root.mainloop()
