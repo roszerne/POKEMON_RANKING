@@ -18,7 +18,6 @@ def make_header(tr_elements):
 
 def get_data(tr_elements, col,how_many):
     # Since out first row is the header, data is stored on the second row onwards
-    print(len(tr_elements))
     for j in range(1, how_many+1):
         # T is our j'th row
         T = tr_elements[j]
@@ -57,6 +56,5 @@ def data(how_many):
     Dict={title:column for (title,column) in col}
     df=pd.DataFrame(Dict)
     df = df.drop(columns = ['Type', 'Total', 'Sp. Atk', 'Sp. Def']) # remove type and total column
-    print(df.head(109))
     df.to_json('PokemonData.json')
 
