@@ -241,6 +241,10 @@ class Gui:
                           bg='white', bd=0))
             ranking_labels[i].grid(column=3, row=i + 1, padx=10)
 
+            stats_label = tk.Button(self.scrollable_frame, text = pokemon.df[1:].to_string(), font=("Arial", font_size - 2),
+                          bg='white', bd=0)
+            stats_label.grid(column = 5, row = i + 1, padx = 50)
+
         self.container.pack()
         self.canvas.pack(side="left", fill="both", expand=True)
 
