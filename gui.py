@@ -28,7 +28,7 @@ class Gui:
         self.container = tk.Frame(parent, bg='white')
         self.canvas = tk.Canvas(self.container, width=self.size, height=self.size, bg='white', highlightthickness=0)
 
-        self.set_data(150)
+        self.set_data(200)
 
         self.scrollable_frame = None
         self.add_scrollbar()
@@ -111,9 +111,6 @@ class Gui:
             cb.grid(sticky="w")  # to keep it aligned
             self.checkbuttons[name] = cb
 
-
-
-    # po nacisnieciu pierwszego okej
     def get_pokemons(self):
         for index, row in self.dataframe.iterrows():
             name = row['Name']
@@ -170,7 +167,7 @@ class Gui:
 
     def color_change(self, stat, i):
         self.scale_buttons[stat][i].configure(bg=self.scale_color)
-        self.scale_buttons[stat][(i + 1) % 2].configure(bg='white')  # jak przyciskasz jeden to ten drugi sie zmienia
+        self.scale_buttons[stat][(i + 1) % 2].configure(bg='white')
 
     def get_scale(self):
         for stats_pair in itertools.combinations(self.stats, 2):
@@ -214,12 +211,8 @@ class Gui:
         self.canvas = tk.Canvas(self.container, width=self.size, height=self.size, bg='white', highlightthickness=0)
         self.add_scrollbar()
 
-        # tk.Label(self.scrollable_frame, text='RESULTS: ', font=("Arial", 20), bg='white').grid(row=0, column=3,
-        #                                                                                              pady=10)
-
         numbers = []
         sorted_ranking = sorted(self.ranking, reverse=True)
-        ranking_labels = []
         pokemon_images = []
 
         for i in range(len(self.chosen_pokemons)):
@@ -227,6 +220,7 @@ class Gui:
             idx, = np.where(self.ranking == result)
             pokemon = self.chosen_pokemons[idx[0]]
             font_size = 13
+
             numbers.append(
                 tk.Label(self.scrollable_frame, text="{}".format(i + 1), font=("Arial", font_size), bg='white', bd=0))
             numbers[i].grid(column=1, row=i + 1, padx=10)
@@ -235,15 +229,15 @@ class Gui:
             pokemon_images.append(pokemon_images_label)
             pokemon_images[i].grid(column=2, row=i + 1, padx=10, pady=10)
 
-            ranking_labels.append(
-                tk.Button(self.scrollable_frame, text=pokemon.name + ':   ' + str(round(result, 3)),
-                          font=("Arial", font_size),
-                          bg='white', bd=0))
-            ranking_labels[i].grid(column=3, row=i + 1, padx=10)
+            ranking_button = tk.Button(self.scrollable_frame, text=pokemon.name + ':   ' + str(round(result, 3)),
+                                       font=("Arial", font_size),
+                                       bg='white', bd=0)
+            ranking_button.grid(column=3, row=i + 1, padx=10)
 
-            stats_label = tk.Button(self.scrollable_frame, text = pokemon.df[1:].to_string(), font=("Arial", font_size - 2),
-                          bg='white', bd=0)
-            stats_label.grid(column = 5, row = i + 1, padx = 50)
+            stats_label = tk.Button(self.scrollable_frame, text=pokemon.df[1:].to_string(),
+                                    font=("Arial", font_size - 2),
+                                    bg='white', bd=0)
+            stats_label.grid(column=5, row=i + 1, padx=50)
 
         self.container.pack()
         self.canvas.pack(side="left", fill="both", expand=True)
