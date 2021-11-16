@@ -28,7 +28,7 @@ class Gui:
         self.container = tk.Frame(parent, bg='white')
         self.canvas = tk.Canvas(self.container, width=self.size, height=self.size, bg='white', highlightthickness=0)
 
-        self.set_data(100)
+        self.set_data(150)
 
         self.scrollable_frame = None
         self.add_scrollbar()
@@ -81,6 +81,7 @@ class Gui:
 
         self.canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
         self.canvas.configure(yscrollcommand=scrollbar.set)
+
         scrollbar.pack(side="right", fill="y")
 
     def set_checkboxes(self):
@@ -110,6 +111,8 @@ class Gui:
             cb.grid(sticky="w")  # to keep it aligned
             self.checkbuttons[name] = cb
 
+
+
     # po nacisnieciu pierwszego okej
     def get_pokemons(self):
         for index, row in self.dataframe.iterrows():
@@ -125,18 +128,10 @@ class Gui:
             self.open_scale_window()
 
     def get_checkbutton_text(self, i):
-        res = f"{str(self.dataframe.iloc[i][0]).replace(' ', '') : ^100}"
+        res = f"{str(self.dataframe.iloc[i][0]).replace(' ', '') : ^110}"
         res += "\n\n"
         for j in range(4):
-            res += f"{self.stats[j]}: {str(self.dataframe.iloc[i][j + 1]) : ^10}" + "  "
-
-        # res = f"{'Name' : ^10}{str(self.dataframe.iloc[i][0]).replace(' ', '') :>10}"
-        # res += "\n"
-        # for j in range(4):
-        #     res += f"{self.stats[j] : ^5}{str(self.dataframe.iloc[i][j + 1]).replace(' ', '') :>10}"
-        #     res += "\n"
-
-        # return "          " + self.dataframe.iloc[i].to_string()
+            res += f"{self.stats[j]}: {str(self.dataframe.iloc[i][j + 1]) : ^5}" + "  "
         return res
 
     def open_scale_window(self):
