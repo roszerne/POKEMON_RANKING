@@ -28,7 +28,7 @@ class Gui:
         self.container = tk.Frame(parent, bg='white')
         self.canvas = tk.Canvas(self.container, width=self.size, height=self.size, bg='white', highlightthickness=0)
 
-        self.set_data(200)
+        self.set_data(10)
 
         self.scrollable_frame = None
         self.add_scrollbar()
@@ -47,6 +47,8 @@ class Gui:
                       'Absolutely more important']
         self.chosen_scale = np.ones((len(self.stats), len(self.stats)), dtype='double')  # macierz kryteriów lvl 2
         self.ranking = []
+
+        self.method = ''
 
         self.set_checkboxes()
         self.set_ok_button(1)
@@ -67,9 +69,13 @@ class Gui:
         if i == 1:
             button1 = tk.Button(self.parent, image=ok_button, command=lambda: self.get_pokemons(), borderwidth=0,
                                 bg='white')
-        else:
+        elif i ==2:
             button1 = tk.Button(self.parent, image=ok_button, command=lambda: self.get_scale(), borderwidth=0,
                                 bg='white')
+        else:
+            button1 = tk.Button(self.parent, image=ok_button, command=lambda: self.start_ranking(), borderwidth=0,
+                                bg='white')
+
         button1.pack()
 
     def add_scrollbar(self):
@@ -119,10 +125,12 @@ class Gui:
             if self.checkbuttons_var[name].get() and not any(pokemon.name == name for pokemon in self.chosen_pokemons):
                 self.chosen_pokemons.append(Pokemon(index, row))  # tworze obiekt klasy Pokemon
 
-        if len(self.chosen_pokemons) < 5 or len(self.chosen_pokemons) > 9:
-            tkinter.messagebox.showinfo("Error", "Wrong number")
-        else:
-            self.open_scale_window()
+        # if len(self.chosen_pokemons) < 5 or len(self.chosen_pokemons) > 9:
+        #     tkinter.messagebox.showinfo("Error", "Wrong number")
+        # else:
+        #     self.open_scale_window()
+
+        self.open_scale_window() # nie ma ograniczenia liczbowego juz
 
     def get_checkbutton_text(self, i):
         res = f"{str(self.dataframe.iloc[i][0]).replace(' ', '') : ^110}"
@@ -194,12 +202,52 @@ class Gui:
                 self.chosen_scale[ind2, ind1] = 1 / val
 
             else:
+                # self.incomplete_data = True # czegos nie zaznaczylismy, ustawiam na None
+                # ind1 = self.stats.index(stats_pair[1])
+                # ind2 = self.stats.index(stats_pair[0])
+                # self.chosen_scale[ind1, ind2] = None
+                # self.chosen_scale[ind2, ind1] = None
                 tkinter.messagebox.showinfo("Error", "Choose all")
                 break
 
-        rank = Ranking(self.chosen_pokemons, self.chosen_scale)
+        self.open_options_window()
+
+    def open_options_window(self):
+        for widget in self.parent.winfo_children():
+            widget.destroy()
+
+        self.set_ok_button(3)
+
+        self.varAHP = tk.IntVar(0)
+        self.varGMM = tk.IntVar(0)
+        cb = tk.Checkbutton(self.parent,
+                            variable=self.varAHP,
+                            text="AHP",
+                            offvalue=0,
+                            compound='left',
+                            bg='white',
+                            font=("Arial", 11)
+                            )
+        cb.pack()
+
+        cb = tk.Checkbutton(self.parent,
+                            variable=self.varGMM,
+                            text="GMM",
+                            offvalue=0,
+                            compound='left',
+                            bg='white',
+                            font=("Arial", 11)
+                            )
+        cb.pack()
+
+    def start_ranking(self):
+        if self.varAHP.get():
+            self.method = 'AHP'
+        elif self.varGMM.get():
+            self.method = 'GMM'
+
+        rank = Ranking(self.chosen_pokemons, self.chosen_scale, self.method)
         self.ranking = rank.AHP()
-        print(self.ranking)
 
         self.open_ranking_window()
 
@@ -217,6 +265,8 @@ class Gui:
 
         for i in range(len(self.chosen_pokemons)):
             result = sorted_ranking[i]
+            print("result")
+            print(result)
             idx, = np.where(self.ranking == result)
             pokemon = self.chosen_pokemons[idx[0]]
             font_size = 13
