@@ -17,6 +17,9 @@ class Ranking:
         self.priority_vector = np.zeros((self.criterions, 1),
                                         dtype='double')  # priority vector derived from 2nd level PC matrix
 
+        self.CI = np.zeros((self.criterions + 1, 1), dtype = 'double')
+        print("size", len(self.CI))
+
     # Creating PC matrices
     def createCriterion(self):
         for i in range(self.criterions):
@@ -76,10 +79,14 @@ class Ranking:
         # create PC matrices
         self.createCriterion()
 
+        self.calculateCI()
+
         if self.method == 'GMM':
             print("GMM HERE")
+            # self.IncompleteDataGMM()
             self.GMM()
         else:
+            # self.IncompleteDataEV()
             self.EigenvalueMethod()
 
         print('Priorities: ', self.priorities)
@@ -87,7 +94,6 @@ class Ranking:
         final = np.dot(self.priorities, self.priority_vector)
         final = final / final.sum()  # normalise sum
         print('Final: ', final)
-        self.IncompleteDataEV()
         return final
 
     def IncompleteDataEV(self):
@@ -111,7 +117,7 @@ class Ranking:
         for i in range(len(self.scale)):
             B[i,i] = lacking_elements[i] + 1
 
-        print(B)
+        self.scale = B
 
     def IncompleteDataGMM(self):
         G = np.zeros((len(self.scale), len(self.scale)), dtype='double')
@@ -130,8 +136,28 @@ class Ranking:
             G[i, i] = len(self.scale) - lacking_elements[i]
 
         r = np.zeros((self.scale, 1), dtype='double')
-        # for i in range(len(self.scale)):
-        #     for j in range()
+        #NIE OGARNIAM TEGO JEGO PRZYKLADU, NIE WIEM CZY ON CZEGOS NIE POMYLIL TAM ALBO JA NIE WIEM O CO CHODZI
+
+    def calculateCI(self):
+        for i in range(self.criterions):
+            A = self.C[i, :, :]
+            w,v = LA.eig(A)
+            w = abs(w)
+            w_max = max(w)
+            consistency_index = (w_max - len(A)) / (len(A) - 1)
+            self.CI[i] = consistency_index
+        w, v = LA.eig(self.scale)
+        w = abs(w)
+        w_max = max(w)
+        consistency_index = (w_max - len(self.scale)) / (len(self.scale) - 1)
+        self.CI[self.criterions] = consistency_index
+
+        print("ci", self.CI)
+
+
+
+
+
 
 
 
