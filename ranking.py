@@ -2,7 +2,7 @@ import numpy as np
 from numpy import linalg as LA
 from Pokemon import Pokemon
 from scipy.stats import gmean
-
+import math
 
 class Ranking:
     def __init__(self, pokemons, scale, method, incomplete_data):
