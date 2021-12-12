@@ -68,12 +68,20 @@ class Ranking:
             row_gmm[i] = gmean(A[i])
         for i in range(self.N):
             self.priorities[:, idx][i] = row_gmm[i] / row_gmm.sum()
-
+            
     def SecondLevelGMM(self):
-        for i in range(len(self.scale)):
-            self.priority_vector[i] = gmean(self.scale[i])
-        self.priority_vector /= self.priority_vector.sum()
-        self.priority_vector = self.priority_vector[:, 0]
+        if self.incomplete_data == False:
+            for i in range(len(self.scale)):
+                self.priority_vector[i] = gmean(self.scale[i])
+            self.priority_vector /= self.priority_vector.sum()
+            self.priority_vector = self.priority_vector[:, 0]
+        else:
+            w_hat = (np.array(np.linalg.solve(self.scale,self.r))).reshape(len(self.scale),1)
+            es = (np.array([math.e for i in range(len(self.scale))])).reshape(len(self.scale),1)
+            w_hat = pow(es,w_hat)
+            self.priority_vector = w_hat.reshape(len(self.scale),1)
+            self.priority_vector /= self.priority_vector.sum()
+            print("W HAT: ",self.priority_vector)
 
     def IncompleteDataEV(self):
         lacking_elements = [0] * len(self.scale)
@@ -98,7 +106,7 @@ class Ranking:
         # B is new scale used in EVM method
         self.scale = B
 
-    def IncompleteDataGMM(self):  # to jest przekopiowane z gory i zmieniona literka wiec no to trzeba zmienic xd
+    def IncompleteDataGMM(self):
         G = np.zeros((len(self.scale), len(self.scale)), dtype='double')
         lacking_elements = [0] * len(self.scale)
         for i in range(len(self.scale)):
@@ -106,16 +114,24 @@ class Ranking:
                 if np.isnan(self.scale[i, j]):
                     lacking_elements[i] += 1
                     lacking_elements[j] += 1
+                    G[i, j] = 1
+                    G[j, i] = 1
+                else:
                     G[i, j] = 0
                     G[j, i] = 0
-                else:
-                    G[i, j] = self.scale[i, j]
-                    G[j, i] = 1 / self.scale[i, j]
         for i in range(len(self.scale)):
             G[i, i] = len(self.scale) - lacking_elements[i]
 
-        # r = np.zeros((self.scale, 1), dtype='double')
-        # NIE OGARNIAM TEGO JEGO PRZYKLADU, NIE WIEM CZY ON CZEGOS NIE POMYLIL TAM ALBO JA NIE WIEM O CO CHODZI
+        r = np.zeros((len(self.scale), 1), dtype='double')
+        for i in range(len(self.scale)):
+            r[i] = np.nansum(self.scale[i,:]) # sum of a row
+            print("sum: ",r[i])
+            r[i] = math.log(r[i]) # make a natural log of it
+
+        self.scale = G 
+        self.r = r   
+        print("INCOMPLETE GWW G: ",G)
+        print("INCOMPLITE R: ",r)
 
     # dla danych kompletnych i niekompletnych (wtedy bierzemy eig z B a u nas self.scale = B)
     def SaatyCI(self):
