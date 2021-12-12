@@ -41,7 +41,7 @@ class Ranking:
             w, v = LA.eig(A)  # w - eigenvalues, v - eigenvectors
             w = abs(w)
             v = abs(v)
-            ind = np.argmax(w)  # find eigenvector with bigges module
+            ind = np.argmax(w)  # find eigenvector with biggest module
             self.priorities[:, i] = v[:, ind]
         self.priorities = self.priorities / self.priorities.sum()  # normalise the vectors
 
@@ -76,16 +76,13 @@ class Ranking:
         self.priority_vector = self.priority_vector[:, 0]
 
     def IncompleteDataEV(self):
-        # self.scale[0,1] = None
-        # self.scale[1,0] = None
-        # self.scale[2,3] = None
-        # self.scale[3,2] = None
         lacking_elements = [0] * len(self.scale)
 
         B = np.zeros((len(self.scale), len(self.scale)))
         for i in range(len(self.scale)):
             for j in range(i + 1, len(self.scale)):
                 if np.isnan(self.scale[i, j]):  # if the value is unknown
+                    print("siema")
                     lacking_elements[i] += 1
                     lacking_elements[j] += 1
                     B[i, j] = 0
@@ -96,10 +93,12 @@ class Ranking:
         # calculating diagonal values of matrix B
         for i in range(len(self.scale)):
             B[i, i] = lacking_elements[i] + 1
+        print("B: ", B)
 
+        # B is new scale used in EVM method
         self.scale = B
 
-    def IncompleteDataGMM(self):
+    def IncompleteDataGMM(self):  # to jest przekopiowane z gory i zmieniona literka wiec no to trzeba zmienic xd
         G = np.zeros((len(self.scale), len(self.scale)), dtype='double')
         lacking_elements = [0] * len(self.scale)
         for i in range(len(self.scale)):
@@ -120,30 +119,19 @@ class Ranking:
 
     # dla danych kompletnych i niekompletnych (wtedy bierzemy eig z B a u nas self.scale = B)
     def SaatyCI(self):
-        # for i in range(self.criterions):
-        #     A = self.C[i, :, :]
-        #     w,v = LA.eig(A)
-        #     w = abs(w)
-        #     w_max = max(w)
-        #     consistency_index = (w_max - len(A)) / (len(A) - 1)
-        #     self.CI[i] = consistency_index
-
-        # nie wiem, czy liczyc dla wszystkich tych macierzy, strasznie male liczby wychodza tam i tak
         w, v = LA.eig(self.scale)
         w = abs(w)
         w_max = max(w)
         consistency_index = (w_max - len(self.scale)) / (len(self.scale) - 1)
         self.CI[self.criterions] = consistency_index
 
-        print("CI", self.CI)
+        print("CI Saaty", self.CI)
 
+    # Random consistency index
     def CalculateCR(self):
-        # Random consistency index
-        listRI = [0, 0, 0, 0.546, 0.83, 1.08, 1.26, 1.33]  # dla wyliczania CR z macierzy "firstlevel", moze sie przyda
-
-        RI4 = listRI[len(self.scale)]  # 0.83
+        RI4 = 0.83
         CR = self.CI[self.criterions] / RI4
-        print("CR: ", CR)
+        print("CR (scale): ", CR)
 
     # Golden-Wang method for calculating Consistency Index (for complete matrices)
     def GoldenWangCI(self):
@@ -185,7 +173,7 @@ class Ranking:
 
         self.SaatyCI()
         self.CalculateCR()
-        if self.incomplete_data:
+        if not self.incomplete_data:
             self.GoldenWangCI()
 
         print('Priorities: ', self.priorities)

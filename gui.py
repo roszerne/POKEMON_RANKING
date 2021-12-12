@@ -182,8 +182,13 @@ class Gui:
         for stats_pair in itertools.combinations(self.stats, 2):
 
             chosen = self.scale_var[stats_pair].get()
-            if not chosen:
+            if not chosen:  # nie zaznaczone nic w comboboxie
+                print("None!!!!Combobox ", stats_pair)
                 self.incomplete_data = True
+                ind1 = self.stats.index(stats_pair[1])
+                ind2 = self.stats.index(stats_pair[0])
+                self.chosen_scale[ind1, ind2] = None
+                self.chosen_scale[ind2, ind1] = None
                 # tkinter.messagebox.showinfo("Error", "Choose all")
                 break
 
@@ -204,7 +209,8 @@ class Gui:
                 self.chosen_scale[ind2, ind1] = 1 / val
 
             else:
-                self.incomplete_data = True # czegos nie zaznaczylismy, ustawiam na None
+                self.incomplete_data = True # tutaj tego przycisku nie zaznaczylismy
+                print("None!!!!BUTTON ", stats_pair)
                 ind1 = self.stats.index(stats_pair[1])
                 ind2 = self.stats.index(stats_pair[0])
                 self.chosen_scale[ind1, ind2] = None
