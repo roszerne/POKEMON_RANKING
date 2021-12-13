@@ -158,6 +158,7 @@ class Gui:
         selected = tk.StringVar()
         scale_combobox = ttk.Combobox(self.parent, textvariable=selected, height=4, font=("Arial", 10), width=20)
         scale_combobox['values'] = self.scale
+        scale_combobox.current(0)
         scale_combobox['state'] = 'readonly'
         y_combobox = 10 + 83.5 * i
         scale_combobox.place(x=400, y=y_combobox)
@@ -175,8 +176,13 @@ class Gui:
         button2.configure(command=lambda: self.color_change(stat, 1))
 
     def color_change(self, stat, i):
-        self.scale_buttons[stat][i].configure(bg=self.scale_color)
-        self.scale_buttons[stat][(i + 1) % 2].configure(bg='white')
+        if self.scale_buttons[stat][i].cget('bg') == self.scale_color:
+            self.scale_buttons[stat][i].configure(bg='white')
+            # self.scale_buttons[stat][(i + 1) % 2].configure(bg=self.scale_color)
+        else:
+            self.scale_buttons[stat][i].configure(bg=self.scale_color)
+            self.scale_buttons[stat][(i + 1) % 2].configure(bg='white')
+
 
     def get_scale(self):
         for stats_pair in itertools.combinations(self.stats, 2):
@@ -190,7 +196,7 @@ class Gui:
                 self.chosen_scale[ind1, ind2] = None
                 self.chosen_scale[ind2, ind1] = None
                 # tkinter.messagebox.showinfo("Error", "Choose all")
-                break
+                # break
 
             elif self.scale_buttons[stats_pair][0].cget('bg') == self.scale_color:
                 val = self.scale.index(chosen)
@@ -216,7 +222,7 @@ class Gui:
                 self.chosen_scale[ind1, ind2] = None
                 self.chosen_scale[ind2, ind1] = None
                 # tkinter.messagebox.showinfo("Error", "Choose all")
-                break
+                # break
 
         self.open_options_window()
 

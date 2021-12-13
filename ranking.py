@@ -81,6 +81,7 @@ class Ranking:
             w_hat = pow(es,w_hat)
             self.priority_vector = w_hat.reshape(len(self.scale),1)
             self.priority_vector /= self.priority_vector.sum()
+            self.priority_vector = self.priority_vector[:, 0]
             print("W HAT: ",self.priority_vector)
 
     def IncompleteDataEV(self):
