@@ -47,6 +47,8 @@ class Gui:
                       'Absolutely more important']
         self.chosen_scale = np.ones((len(self.stats), len(self.stats)), dtype='double')  # macierz kryteriów lvl 2
         self.ranking = []
+        self.varAHP = tk.IntVar(0)
+        self.varGMM = tk.IntVar(0)
 
         self.incomplete_data = False
         self.method = ''
@@ -74,7 +76,7 @@ class Gui:
             button1 = tk.Button(self.parent, image=ok_button, command=lambda: self.get_scale(), borderwidth=0,
                                 bg='white')
         else:
-            button1 = tk.Button(self.parent, image=ok_button, command=lambda: self.start_ranking(), borderwidth=0,
+            button1 = tk.Button(self.parent, image=ok_button, command=lambda: self.open_scale_window(), borderwidth=0,
                                 bg='white')
 
         button1.pack()
@@ -131,7 +133,7 @@ class Gui:
         # else:
         #     self.open_scale_window()
 
-        self.open_scale_window()  # nie ma ograniczenia liczbowego juz
+        self.open_options_window()  # nie ma ograniczenia liczbowego juz
 
     def get_checkbutton_text(self, i):
         res = f"{str(self.dataframe.iloc[i][0]).replace(' ', '') : ^110}"
@@ -143,8 +145,8 @@ class Gui:
         return res
 
     def open_scale_window(self):
-
-        self.delete_old_window()
+        for widget in self.parent.winfo_children():
+            widget.destroy()
 
         self.container = tk.Frame(self.parent, bg='white')
         self.canvas = tk.Canvas(self.container, width=self.size, height=self.size, bg='white', highlightthickness=0)
@@ -237,16 +239,12 @@ class Gui:
                 # tkinter.messagebox.showinfo("Error", "Choose all")
                 # break
 
-        self.open_options_window()
+        self.start_ranking()
 
     def open_options_window(self):
-        for widget in self.parent.winfo_children():
-            widget.destroy()
-
+        self.delete_widgets()
         self.set_ok_button(3)
 
-        self.varAHP = tk.IntVar(0)
-        self.varGMM = tk.IntVar(0)
         cb = tk.Checkbutton(self.parent,
                             variable=self.varAHP,
                             text="AHP",
@@ -279,9 +277,7 @@ class Gui:
         self.open_ranking_window()
 
     def open_ranking_window(self):
-        for widget in self.parent.winfo_children():
-            widget.destroy()
-
+        self.delete_widgets()
         self.container = tk.Frame(self.parent, bg='white')
         self.canvas = tk.Canvas(self.container, width=self.size, height=self.size, bg='white', highlightthickness=0)
         self.add_scrollbar()
@@ -319,6 +315,10 @@ class Gui:
 
     def delete_old_window(self):
         self.canvas.delete('all')
+        for widget in self.parent.winfo_children():
+            widget.destroy()
+
+    def delete_widgets(self):
         for widget in self.parent.winfo_children():
             widget.destroy()
 
