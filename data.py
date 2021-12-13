@@ -55,6 +55,7 @@ def data(how_many):
     get_data(tr_elements, col,how_many)
     Dict={title:column for (title,column) in col}
     df=pd.DataFrame(Dict)
-    df = df.drop(columns = ['Type', 'Total', 'Sp. Atk', 'Sp. Def']) # remove type and total column
+    # df = df.drop(columns = ['Type', 'Total', 'Sp. Atk', 'Sp. Def']) # remove type and total column
+    df = df.drop(columns = ['Type', 'Total']) # remove type and total column
     df.to_json('PokemonData.json')
 

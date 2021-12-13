@@ -42,7 +42,7 @@ class Gui:
         self.scale_comboboxes = {}
         self.scale_var = {}
         self.scale_color = '#309BDC'
-        self.stats = ['HP', 'Attack', 'Defense', 'Speed']
+        self.stats = ['HP', 'Attack', 'Defense', 'Sp Attack', 'Sp Defense', 'Speed']
         self.scale = ['Equal importance', 'Somewhat more important', 'Much more important', 'Very much important',
                       'Absolutely more important']
         self.chosen_scale = np.ones((len(self.stats), len(self.stats)), dtype='double')  # macierz kryteriów lvl 2
@@ -70,7 +70,7 @@ class Gui:
         if i == 1:
             button1 = tk.Button(self.parent, image=ok_button, command=lambda: self.get_pokemons(), borderwidth=0,
                                 bg='white')
-        elif i ==2:
+        elif i == 2:
             button1 = tk.Button(self.parent, image=ok_button, command=lambda: self.get_scale(), borderwidth=0,
                                 bg='white')
         else:
@@ -131,19 +131,24 @@ class Gui:
         # else:
         #     self.open_scale_window()
 
-        self.open_scale_window() # nie ma ograniczenia liczbowego juz
+        self.open_scale_window()  # nie ma ograniczenia liczbowego juz
 
     def get_checkbutton_text(self, i):
         res = f"{str(self.dataframe.iloc[i][0]).replace(' ', '') : ^110}"
         res += "\n\n"
-        for j in range(4):
+        for j in range(len(self.stats)):
             res += f"{self.stats[j]}: {str(self.dataframe.iloc[i][j + 1]) : ^5}" + "  "
+            if j == 2:
+                res += "\n"
         return res
 
     def open_scale_window(self):
 
         self.delete_old_window()
-        self.parent.geometry("{}x{}".format(self.size, self.size))
+
+        self.container = tk.Frame(self.parent, bg='white')
+        self.canvas = tk.Canvas(self.container, width=self.size, height=self.size, bg='white', highlightthickness=0)
+        self.add_scrollbar()
         self.set_ok_button(2)
 
         i = 1
@@ -152,25 +157,34 @@ class Gui:
             self.create_combobox(stats_pair, i)
             i += 1
 
+        self.container.pack()
+        self.canvas.pack()
+
     def create_combobox(self, stat, i):
-        self.parent.update()
+        self.scrollable_frame.update()
 
         selected = tk.StringVar()
-        scale_combobox = ttk.Combobox(self.parent, textvariable=selected, height=4, font=("Arial", 10), width=20)
+        scale_combobox = ttk.Combobox(self.scrollable_frame, textvariable=selected, height=4, font=("Arial", 11), width=20)
         scale_combobox['values'] = self.scale
         scale_combobox.current(0)
         scale_combobox['state'] = 'readonly'
         y_combobox = 10 + 83.5 * i
-        scale_combobox.place(x=400, y=y_combobox)
+        # scale_combobox.place(x=400, y=y_combobox)
+        scale_combobox.grid(column= 8, row= i + 2, padx=20, pady = 20)
         self.scale_var[stat] = selected
         self.scale_comboboxes[stat] = scale_combobox
 
+        # self.container.pack()
+        # self.canvas.pack(side="left", fill="both", expand=True)
+
     # przyciski z kryteriami
     def create_buttons(self, stat, i):
-        button1 = tk.Button(text=stat[0], height=1, width=15, font=("Arial", 10), bg='white', bd=3, relief='ridge')
-        button2 = tk.Button(text=stat[1], height=1, width=15, font=("Arial", 10), bg='white', bd=3, relief='ridge')
-        button1.place(x=20, y=85 * i)
-        button2.place(x=200, y=85 * i)
+        button1 = tk.Button(self.scrollable_frame, text=stat[0], height=1, width=15, font=("Arial", 11), bg='white', bd=3, relief='ridge')
+        button2 = tk.Button(self.scrollable_frame, text=stat[1], height=1, width=15, font=("Arial", 11), bg='white', bd=3, relief='ridge')
+        # button1.place(x=20, y=85 * i)
+        # button2.place(x=200, y=85 * i)
+        button1.grid(column = 3, row = i + 2, padx = 20, pady = 20)
+        button2.grid(column = 5, row = i + 2, padx = 20, pady = 20)
         self.scale_buttons[stat] = (button1, button2)
         button1.configure(command=lambda: self.color_change(stat, 0))
         button2.configure(command=lambda: self.color_change(stat, 1))
@@ -182,7 +196,6 @@ class Gui:
         else:
             self.scale_buttons[stat][i].configure(bg=self.scale_color)
             self.scale_buttons[stat][(i + 1) % 2].configure(bg='white')
-
 
     def get_scale(self):
         for stats_pair in itertools.combinations(self.stats, 2):
@@ -215,7 +228,7 @@ class Gui:
                 self.chosen_scale[ind2, ind1] = 1 / val
 
             else:
-                self.incomplete_data = True # tutaj tego przycisku nie zaznaczylismy
+                self.incomplete_data = True  # tutaj tego przycisku nie zaznaczylismy
                 print("None!!!!BUTTON ", stats_pair)
                 ind1 = self.stats.index(stats_pair[1])
                 ind2 = self.stats.index(stats_pair[0])

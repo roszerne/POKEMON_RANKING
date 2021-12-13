@@ -11,14 +11,14 @@ class Ranking:
         self.pokemons = pokemons
         self.scale = scale  # 2nd level PC matrix
         self.N = len(pokemons)  # numbers of alternatives
-        self.criterions = 4  # number of criterions
+        self.criterions = 6  # number of criterions
         self.C = np.ones((self.criterions, self.N, self.N), dtype='double')  # Pairwise comparison (PC) matrix
         self.priorities = np.zeros((self.N, self.criterions),
                                    dtype='double')  # priority vectors of 1st level PC matrices
         self.priority_vector = np.zeros((self.criterions, 1),
                                         dtype='double')  # priority vector derived from 2nd level PC matrix
+        self.CI = None
 
-        self.CI = np.zeros((self.criterions + 1, 1), dtype='double')
 
     # Creating PC matrices
     def createCriterion(self):
@@ -140,14 +140,15 @@ class Ranking:
         w = abs(w)
         w_max = max(w)
         consistency_index = (w_max - len(self.scale)) / (len(self.scale) - 1)
-        self.CI[self.criterions] = consistency_index
+
+        self.CI = consistency_index
 
         print("CI Saaty", self.CI)
 
     # Random consistency index
     def CalculateCR(self):
         RI4 = 0.83
-        CR = self.CI[self.criterions] / RI4
+        CR = self.CI / RI4
         print("CR (scale): ", CR)
 
     # Golden-Wang method for calculating Consistency Index (for complete matrices)
