@@ -4,14 +4,11 @@ class Pokemon:
         self.df = dataFrame
         self.name = dataFrame.iloc[0]
         self.crit = [0] * 6
-        # self.crit[0] = dataFrame.iloc[1] # Hp
-        # self.crit[1] = dataFrame.iloc[2] # attack
-        # self.crit[2] = dataFrame.iloc[3] # defense
-        # self.crit[3] = dataFrame.iloc[4] # speed
         self.crit[0] = dataFrame.iloc[1]  # Hp
         self.crit[1] = dataFrame.iloc[2]  # attack
         self.crit[2] = dataFrame.iloc[3]  # defense
         self.crit[3] = dataFrame.iloc[4]  # sp attack
         self.crit[4] = dataFrame.iloc[5] # sp def
         self.crit[5] = dataFrame.iloc[6] # speed
-        # self.crit[6] # mozna tutaj dopisac te wyniki z obliczen subkryteriow
+        # self.crit[6] # mozna tutaj dopisac te wyniki z obliczen subkryteriow 
+        # :oooo nie rozumiem xd

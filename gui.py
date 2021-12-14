@@ -12,7 +12,6 @@ import data
 from Pokemon import Pokemon
 from ranking import Ranking
 
-
 class Gui:
     def __init__(self, parent):
         self.size = 600
