@@ -5,13 +5,15 @@ from scipy.stats import gmean
 import math
 
 class Ranking:
-    def __init__(self, pokemons, scale, method, incomplete_data):
+    def __init__(self, pokemons, scale, subcriteria_scale, subcriteria, method, incomplete_data):
         self.method = method
         self.incomplete_data = incomplete_data
         self.pokemons = pokemons
         self.scale = scale  # 2nd level PC matrix
         self.N = len(pokemons)  # numbers of alternatives
-        self.criterions = 6  # number of criterions
+        self.criterions = 4  # number of criterions
+        self.subscriteria = subcriteria
+        self.subscriteria_scale = subcriteria_scale # to jest np.ones((2,2,2)) wiec juz sa w tym dwa porownania, kolejnosc taka jak w self.subcriteria
         self.C = np.ones((self.criterions, self.N, self.N), dtype='double')  # Pairwise comparison (PC) matrix
         self.priorities = np.zeros((self.N, self.criterions),
                                    dtype='double')  # priority vectors of 1st level PC matrices
@@ -25,7 +27,7 @@ class Ranking:
         for i in range(self.criterions):
             for j in range(0, self.N):
                 for k in range(j + 1, self.N):
-                    self.C[i, j, k] = self.pokemons[j].crit[i] / self.pokemons[k].crit[i]
+                    self.C[i, j, k] = self.pokemons[j].crit[i] / self.pokemons[k].crit[i]  #to pewnie trzeba zmienic bo teraz to endurance wchodzi i special
                     self.C[i, k, j] = 1 / self.C[i, j, k]
 
     def EigenvalueMethod(self):

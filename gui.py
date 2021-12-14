@@ -6,7 +6,6 @@ import itertools
 import numpy as np
 import pandas as pd
 import requests
-import tkinter.messagebox
 from PIL import ImageTk, Image
 
 import data
@@ -42,16 +41,21 @@ class Gui:
         self.scale_comboboxes = {}
         self.scale_var = {}
         self.scale_color = '#309BDC'
-        self.stats = ['HP', 'Attack', 'Defense', 'Sp Attack', 'Sp Defense', 'Speed']
+        self.stats = ['HP', 'Attack', 'Defense', 'Sp Attack', 'Sp Defense', 'Speed']  # one sa w data
         self.scale = ['Equal importance', 'Somewhat more important', 'Much more important', 'Very much important',
                       'Absolutely more important']
-        self.chosen_scale = np.ones((len(self.stats), len(self.stats)), dtype='double')  # macierz kryteriów lvl 2
+
+        self.subcriteria = [('Sp Attack', 'Sp Defense'), ("HP", "Defense")]
+        self.subcriteria_matrix = np.ones((2, 2, 2), dtype='double')
+        self.criteria = ['Endurance', 'Special', 'Attack', 'Speed']
+        self.chosen_scale = np.ones((len(self.criteria), len(self.criteria)), dtype='double')  # macierz kryteriów lvl 2
+
         self.ranking = []
-        self.varAHP = tk.IntVar(0)
+        self.varEVM = tk.IntVar(0)
         self.varGMM = tk.IntVar(0)
 
         self.incomplete_data = False
-        self.method = ''
+        self.method = 'EVM'  # default method
 
         self.set_checkboxes()
         self.set_ok_button(1)
@@ -127,12 +131,6 @@ class Gui:
                 continue
             if self.checkbuttons_var[name].get() and not any(pokemon.name == name for pokemon in self.chosen_pokemons):
                 self.chosen_pokemons.append(Pokemon(index, row))  # tworze obiekt klasy Pokemon
-
-        # if len(self.chosen_pokemons) < 5 or len(self.chosen_pokemons) > 9:
-        #     tkinter.messagebox.showinfo("Error", "Wrong number")
-        # else:
-        #     self.open_scale_window()
-
         self.open_options_window()  # nie ma ograniczenia liczbowego juz
 
     def get_checkbutton_text(self, i):
@@ -154,9 +152,13 @@ class Gui:
         self.set_ok_button(2)
 
         i = 1
-        for stats_pair in itertools.combinations(self.stats, 2):
+        for stats_pair in itertools.combinations(self.criteria, 2):
             self.create_buttons(stats_pair, i)
             self.create_combobox(stats_pair, i)
+            i += 1
+        for sub in self.subcriteria:
+            self.create_buttons(sub, i)
+            self.create_combobox(sub, i)
             i += 1
 
         self.container.pack()
@@ -166,27 +168,23 @@ class Gui:
         self.scrollable_frame.update()
 
         selected = tk.StringVar()
-        scale_combobox = ttk.Combobox(self.scrollable_frame, textvariable=selected, height=4, font=("Arial", 11), width=20)
+        scale_combobox = ttk.Combobox(self.scrollable_frame, textvariable=selected, height=4, font=("Arial", 11),
+                                      width=20)
         scale_combobox['values'] = self.scale
         scale_combobox.current(0)
         scale_combobox['state'] = 'readonly'
-        y_combobox = 10 + 83.5 * i
-        # scale_combobox.place(x=400, y=y_combobox)
-        scale_combobox.grid(column= 8, row= i + 2, padx=20, pady = 20)
+        scale_combobox.grid(column=8, row=i + 2, padx=20, pady=20)
         self.scale_var[stat] = selected
         self.scale_comboboxes[stat] = scale_combobox
 
-        # self.container.pack()
-        # self.canvas.pack(side="left", fill="both", expand=True)
-
     # przyciski z kryteriami
     def create_buttons(self, stat, i):
-        button1 = tk.Button(self.scrollable_frame, text=stat[0], height=1, width=15, font=("Arial", 11), bg='white', bd=3, relief='ridge')
-        button2 = tk.Button(self.scrollable_frame, text=stat[1], height=1, width=15, font=("Arial", 11), bg='white', bd=3, relief='ridge')
-        # button1.place(x=20, y=85 * i)
-        # button2.place(x=200, y=85 * i)
-        button1.grid(column = 3, row = i + 2, padx = 20, pady = 20)
-        button2.grid(column = 5, row = i + 2, padx = 20, pady = 20)
+        button1 = tk.Button(self.scrollable_frame, text=stat[0], height=1, width=15, font=("Arial", 11), bg='white',
+                            bd=3, relief='ridge')
+        button2 = tk.Button(self.scrollable_frame, text=stat[1], height=1, width=15, font=("Arial", 11), bg='white',
+                            bd=3, relief='ridge')
+        button1.grid(column=3, row=i + 2, padx=20, pady=20)
+        button2.grid(column=5, row=i + 2, padx=20, pady=20)
         self.scale_buttons[stat] = (button1, button2)
         button1.configure(command=lambda: self.color_change(stat, 0))
         button2.configure(command=lambda: self.color_change(stat, 1))
@@ -194,51 +192,66 @@ class Gui:
     def color_change(self, stat, i):
         if self.scale_buttons[stat][i].cget('bg') == self.scale_color:
             self.scale_buttons[stat][i].configure(bg='white')
-            # self.scale_buttons[stat][(i + 1) % 2].configure(bg=self.scale_color)
         else:
             self.scale_buttons[stat][i].configure(bg=self.scale_color)
             self.scale_buttons[stat][(i + 1) % 2].configure(bg='white')
 
     def get_scale(self):
-        for stats_pair in itertools.combinations(self.stats, 2):
-
+        all = list(itertools.combinations(self.criteria, 2)) + self.subcriteria  # żeby w 1 pętli
+        for stats_pair in all:
             chosen = self.scale_var[stats_pair].get()
-            if not chosen:  # nie zaznaczone nic w comboboxie
-                print("None!!!!Combobox ", stats_pair)
+            if not chosen:  # niezaznaczone nic w comboboxie
                 self.incomplete_data = True
-                ind1 = self.stats.index(stats_pair[1])
-                ind2 = self.stats.index(stats_pair[0])
-                self.chosen_scale[ind1, ind2] = None
-                self.chosen_scale[ind2, ind1] = None
-                # tkinter.messagebox.showinfo("Error", "Choose all")
-                # break
+                if stats_pair not in self.subcriteria:
+                    ind1 = self.criteria.index(stats_pair[1])
+                    ind2 = self.criteria.index(stats_pair[0])
+                    self.chosen_scale[ind1, ind2] = None
+                    self.chosen_scale[ind2, ind1] = None
+                else:
+                    idx = self.subcriteria.index(stats_pair)  # ktory zestaw subkryteriow
+                    self.subcriteria_matrix[idx, 0, 1] = None
+                    self.subcriteria_matrix[idx, 1, 0] = None
 
             elif self.scale_buttons[stats_pair][0].cget('bg') == self.scale_color:
                 val = self.scale.index(chosen)
                 val = val * 2 + 1
-                ind1 = self.stats.index(stats_pair[0])
-                ind2 = self.stats.index(stats_pair[1])
-                self.chosen_scale[ind1, ind2] = val
-                self.chosen_scale[ind2, ind1] = 1 / val
+                if stats_pair not in self.subcriteria:
+                    ind1 = self.criteria.index(stats_pair[0])
+                    ind2 = self.criteria.index(stats_pair[1])
+                    self.chosen_scale[ind1, ind2] = val
+                    self.chosen_scale[ind2, ind1] = 1 / val
+                else:
+                    idx = self.subcriteria.index(stats_pair)  # ktory zestaw subkryteriow
+                    # wiem ze waznieszy jest ten zerowy w parze
+                    self.subcriteria_matrix[idx, 0, 1] = val  # ten ważniejszy
+                    self.subcriteria_matrix[idx, 1, 0] = 1 / val
 
             elif self.scale_buttons[stats_pair][1].cget('bg') == self.scale_color:
                 val = self.scale.index(chosen)
                 val = val * 2 + 1
-                ind1 = self.stats.index(stats_pair[1])
-                ind2 = self.stats.index(stats_pair[0])
-                self.chosen_scale[ind1, ind2] = val
-                self.chosen_scale[ind2, ind1] = 1 / val
+                if stats_pair not in self.subcriteria:
+                    ind1 = self.criteria.index(stats_pair[1])
+                    ind2 = self.criteria.index(stats_pair[0])
+                    self.chosen_scale[ind1, ind2] = val
+                    self.chosen_scale[ind2, ind1] = 1 / val
+                else:
+                    idx = self.subcriteria.index(stats_pair)  # ktory zestaw subkryteriow
+                    # wiem ze waznieszy jest ten pierwszy w parze
+                    self.subcriteria_matrix[idx, 0, 1] = 1 / val
+                    self.subcriteria_matrix[idx, 1, 0] = val
 
             else:
                 self.incomplete_data = True  # tutaj tego przycisku nie zaznaczylismy
-                print("None!!!!BUTTON ", stats_pair)
-                ind1 = self.stats.index(stats_pair[1])
-                ind2 = self.stats.index(stats_pair[0])
-                self.chosen_scale[ind1, ind2] = None
-                self.chosen_scale[ind2, ind1] = None
-                # tkinter.messagebox.showinfo("Error", "Choose all")
-                # break
-
+                if stats_pair not in self.subcriteria:
+                    ind1 = self.criteria.index(stats_pair[1])
+                    ind2 = self.criteria.index(stats_pair[0])
+                    self.chosen_scale[ind1, ind2] = None
+                    self.chosen_scale[ind2, ind1] = None
+                else:
+                    idx = self.subcriteria.index(stats_pair)  # ktory zestaw subkryteriow
+                    self.subcriteria_matrix[idx, 0, 1] = None
+                    self.subcriteria_matrix[idx, 1, 0] = None
+        print("subkryteria:", self.subcriteria_matrix)
         self.start_ranking()
 
     def open_options_window(self):
@@ -246,14 +259,14 @@ class Gui:
         self.set_ok_button(3)
 
         cb = tk.Checkbutton(self.parent,
-                            variable=self.varAHP,
-                            text="AHP",
+                            variable=self.varEVM,
+                            text="EVM",
                             offvalue=0,
                             compound='left',
                             bg='white',
                             font=("Arial", 11)
                             )
-        cb.pack()
+        cb.place(x=100, y=50)
 
         cb = tk.Checkbutton(self.parent,
                             variable=self.varGMM,
@@ -263,15 +276,23 @@ class Gui:
                             bg='white',
                             font=("Arial", 11)
                             )
-        cb.pack()
+        cb.place(x=100, y=100)
+
+        label = tk.Label(self.parent,
+                         text='How many experts?',
+                         bg='white',
+                         font=("Arial", 11))
+
+        label.place(x=400, y=50)
 
     def start_ranking(self):
-        if self.varAHP.get():
-            self.method = 'AHP'
+        if self.varEVM.get():
+            self.method = 'EVM'
         elif self.varGMM.get():
             self.method = 'GMM'
 
-        rank = Ranking(self.chosen_pokemons, self.chosen_scale, self.method, self.incomplete_data)
+        rank = Ranking(self.chosen_pokemons, self.chosen_scale, self.subcriteria_matrix, self.subcriteria, self.method,
+                       self.incomplete_data)
         self.ranking = rank.AHP()
 
         self.open_ranking_window()
