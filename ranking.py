@@ -150,7 +150,6 @@ class Ranking:
             w_hat = pow(es, w_hat)
             w_hat = w_hat.reshape(2, 1)
             A = np.dot(C, w_hat)
-            # nie wierze że to serio robię, ten język jest U P O Ś L E D Z O N Y XD
             for i in range(0, self.N):
                 self.priorities2[i, 0] = A[i]
 
@@ -169,7 +168,6 @@ class Ranking:
             w_hat = pow(es, w_hat)
             w_hat = w_hat.reshape(2, 1)
             A = np.dot(C, w_hat)
-            # nie wierze że to serio robię, ten język jest U P O Ś L E D Z O N Y XD
             for i in range(0, self.N):
                 self.priorities2[i, 1] = A[i]
 
@@ -277,8 +275,8 @@ class Ranking:
 
         self.scale = G
         self.r = r
-        print("INCOMPLETE goldeb_wangW G: ", G)
-        print("INCOMPLITE R: ", r)
+        print("INCOMPLETE G: ", G)
+        print("INCOMPLETE R: ", r)
 
         # subcriteria
         G = np.zeros((2, 2, 2))
@@ -308,7 +306,6 @@ class Ranking:
         self.subscale = G
         self.sub_r = r
 
-        # dla danych kompletnych i niekompletnych (wtedy bierzemy eig z B a u nas self.scale = B)
 
     def SaatyCI(self, scale, num_exp = -1):
         for i in range(len(scale)):
