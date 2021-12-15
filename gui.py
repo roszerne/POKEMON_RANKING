@@ -266,6 +266,7 @@ class Gui:
 
         # if all experts has spoken
         if (exp_num + 1) == self.experts:
+            print("go to ranking")
             self.start_ranking()
         else: # cotinue opening scale windows
             self.open_scale_window(exp_num + 1)

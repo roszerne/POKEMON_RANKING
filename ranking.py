@@ -32,6 +32,7 @@ class Ranking:
 
     # creating one matrix 
     def aggregation(self):
+        print("NUMBERS OF EKSPERTS: ", self.experts)
         print("SUBSCALE: ", self.subscale)
         print("SCALE: ", self.scale)
 
@@ -337,9 +338,7 @@ class Ranking:
 
     def AHP(self):
 
-        # if we have more than 1 expert
-        if self.experts > 1:
-            self.aggregation()
+        self.aggregation()
 
         # create PC matrices
         self.createCriterion()
