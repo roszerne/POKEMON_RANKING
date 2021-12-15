@@ -1,7 +1,5 @@
-from re import L
 import numpy as np
 from numpy import linalg as LA
-from Pokemon import Pokemon
 from scipy.stats import gmean
 import math
 
@@ -47,8 +45,8 @@ class Ranking:
 
         self.scale = self.scale[0, :, :]
         self.subscale = self.subscale[0, :, :, :]
-        self.scale = np.power(self.scale, (1/self.experts))
-        self.subscale = np.power(self.subscale, (1/self.experts))
+        self.scale = np.power(self.scale, (1 / self.experts))
+        self.subscale = np.power(self.subscale, (1 / self.experts))
         print("Aggregated Scale: ", self.scale)
         print("Aggregated Subscale: ", self.subscale)
 

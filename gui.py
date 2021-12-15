@@ -263,9 +263,11 @@ class Gui:
                     idx = self.subcriteria.index(stats_pair)
                     self.subscale[exp_num, idx, 0, 1] = None
                     self.subscale[exp_num, idx, 1, 0] = None
+
+        # if all experts has spoken
         if (exp_num + 1) == self.experts:
             self.start_ranking()
-        else:
+        else: # cotinue opening scale windows
             self.open_scale_window(exp_num + 1)
 
     def open_options_window(self):
@@ -303,7 +305,7 @@ class Gui:
         self.entry.place(x=400, y=100)
 
     def start_ranking(self):
-
+        # which method is chosen
         if self.varEVM.get():
             self.method = 'EVM'
         elif self.varGMM.get():
@@ -322,9 +324,10 @@ class Gui:
         self.add_scrollbar()
 
         numbers = []
-        sorted_ranking = sorted(self.ranking, reverse=True)
+        sorted_ranking = sorted(self.ranking, reverse=True) # sorting the ranking
         pokemon_images = []
 
+        # displaying pokemons and the results
         for i in range(len(self.chosen_pokemons)):
             result = sorted_ranking[i]
             idx, = np.where(self.ranking == result)
