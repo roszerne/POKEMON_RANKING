@@ -12,6 +12,7 @@ import data
 from Pokemon import Pokemon
 from ranking import Ranking
 
+
 class Gui:
     def __init__(self, parent):
         self.size = 600
@@ -40,22 +41,24 @@ class Gui:
         self.scale_comboboxes = {}
         self.scale_var = {}
         self.scale_color = '#309BDC'
-        self.stats = ['HP', 'Attack', 'Defense', 'Sp Attack', 'Sp Defense', 'Speed']  # one sa w data
+        self.stats = ['HP', 'Attack', 'Defense', 'Sp Attack', 'Sp Defense', 'Speed']  # stats in data
         self.scale = ['Equal importance', 'Somewhat more important', 'Much more important', 'Very much important',
-                      'Absolutely more important']
-
-        self.subcriteria = [('Sp Attack', 'Sp Defense'), ("HP", "Defense")]
-        self.subcriteria_matrix = np.ones((2, 2, 2), dtype='double')
-        self.criteria = ['Endurance', 'Special', 'Attack', 'Speed']
-        self.chosen_scale = np.ones((len(self.criteria), len(self.criteria)), dtype='double')  # macierz kryteriów lvl 2
+                      'Absolutely more important']  # AHP scale
+        self.subcriteria = [('Sp Attack', 'Sp Defense'),
+                            ("HP", "Defense")]  # subcriteria 1st tuple = special, 2nd tuple = endurance
+        self.criteria = ['Endurance', 'Special', 'Attack', 'Speed']  # main criteria
+        self.chosen_scale = None
+        self.subscale = None
 
         self.ranking = []
+        self.entry = None
+        self.experts = 1 # number of experts, default is 1
         self.varEVM = tk.IntVar(0)
         self.varGMM = tk.IntVar(0)
-
         self.incomplete_data = False
         self.method = 'EVM'  # default method
 
+        # create 1st window
         self.set_checkboxes()
         self.set_ok_button(1)
         self.container.pack()
@@ -68,20 +71,19 @@ class Gui:
         self.dataframe = df.head(how_many)
         print(self.dataframe)
 
-    def set_ok_button(self, i):
+    def set_ok_button(self, i, exp_num=0):
         ok_button = tk.PhotoImage(file="okbutton--1-.png")
         img_label = tk.Label(image=ok_button)
         img_label.image = ok_button
-        if i == 1:
+        if i == 1:  # after 1st window
             button1 = tk.Button(self.parent, image=ok_button, command=lambda: self.get_pokemons(), borderwidth=0,
                                 bg='white')
-        elif i == 2:
-            button1 = tk.Button(self.parent, image=ok_button, command=lambda: self.get_scale(), borderwidth=0,
+        elif i == 2: # after window with buttons and checkboxes, exp_num is the number of choosing expert
+            button1 = tk.Button(self.parent, image=ok_button, command=lambda: self.get_scale(exp_num), borderwidth=0,
                                 bg='white')
-        else:
-            button1 = tk.Button(self.parent, image=ok_button, command=lambda: self.open_scale_window(), borderwidth=0,
+        else: # after the option window, getting the number of experts and which method is to be used
+            button1 = tk.Button(self.parent, image=ok_button, command=lambda: self.get_experts(), borderwidth=0,
                                 bg='white')
-
         button1.pack()
 
     def add_scrollbar(self):
@@ -96,13 +98,14 @@ class Gui:
 
         scrollbar.pack(side="right", fill="y")
 
+    # checkboxes in 1st window
     def set_checkboxes(self):
         for i, name in enumerate(self.dataframe['Name']):
             if " " in name:
                 continue
             if "\'" in name:
                 name = name.replace("\'", "")
-            image_url = 'https://img.pokemondb.net/artwork/' + name.lower() + '.jpg'
+            image_url = 'https://img.pokemondb.net/artwork/' + name.lower() + '.jpg'  # getting the image
             response = requests.get(image_url)
             image = io.BytesIO(response.content)
             image = Image.open(image).resize((110, 110))
@@ -129,8 +132,8 @@ class Gui:
             if " " in name:
                 continue
             if self.checkbuttons_var[name].get() and not any(pokemon.name == name for pokemon in self.chosen_pokemons):
-                self.chosen_pokemons.append(Pokemon(index, row))  # tworze obiekt klasy Pokemon
-        self.open_options_window()  # nie ma ograniczenia liczbowego juz
+                self.chosen_pokemons.append(Pokemon(index, row))  # Pokemon class
+        self.open_options_window()
 
     def get_checkbutton_text(self, i):
         res = f"{str(self.dataframe.iloc[i][0]).replace(' ', '') : ^110}"
@@ -141,14 +144,24 @@ class Gui:
                 res += "\n"
         return res
 
-    def open_scale_window(self):
+    def get_experts(self):
+        self.experts = int(self.entry.get())
+        # creating matrices after getting the num od experts
+        self.chosen_scale = np.ones((self.experts, len(self.criteria), len(self.criteria)),
+                                    dtype='double')
+        self.subscale = np.ones((self.experts, 2, 2, 2), dtype='double')
+
+        # scale window for first expert
+        self.open_scale_window(0)
+
+    def open_scale_window(self, expert_number):
         for widget in self.parent.winfo_children():
             widget.destroy()
 
         self.container = tk.Frame(self.parent, bg='white')
         self.canvas = tk.Canvas(self.container, width=self.size, height=self.size, bg='white', highlightthickness=0)
         self.add_scrollbar()
-        self.set_ok_button(2)
+        self.set_ok_button(2, expert_number)
 
         i = 1
         for stats_pair in itertools.combinations(self.criteria, 2):
@@ -176,7 +189,7 @@ class Gui:
         self.scale_var[stat] = selected
         self.scale_comboboxes[stat] = scale_combobox
 
-    # przyciski z kryteriami
+    # buttons for crietria and subcriteria
     def create_buttons(self, stat, i):
         button1 = tk.Button(self.scrollable_frame, text=stat[0], height=1, width=15, font=("Arial", 11), bg='white',
                             bd=3, relief='ridge')
@@ -195,63 +208,65 @@ class Gui:
             self.scale_buttons[stat][i].configure(bg=self.scale_color)
             self.scale_buttons[stat][(i + 1) % 2].configure(bg='white')
 
-    def get_scale(self):
-        all = list(itertools.combinations(self.criteria, 2)) + self.subcriteria  # żeby w 1 pętli
+    # getting the opinion of each an expert (exp_num indicates which expert)
+    def get_scale(self, exp_num):
+        all = list(itertools.combinations(self.criteria, 2)) + self.subcriteria
         for stats_pair in all:
             chosen = self.scale_var[stats_pair].get()
-            if not chosen:  # niezaznaczone nic w comboboxie
+            if not chosen:  # nothing in combobox
                 self.incomplete_data = True
                 if stats_pair not in self.subcriteria:
                     ind1 = self.criteria.index(stats_pair[1])
                     ind2 = self.criteria.index(stats_pair[0])
-                    self.chosen_scale[ind1, ind2] = None
-                    self.chosen_scale[ind2, ind1] = None
+                    self.chosen_scale[exp_num, ind1, ind2] = None
+                    self.chosen_scale[exp_num, ind2, ind1] = None
                 else:
-                    idx = self.subcriteria.index(stats_pair)  # ktory zestaw subkryteriow
-                    self.subcriteria_matrix[idx, 0, 1] = None
-                    self.subcriteria_matrix[idx, 1, 0] = None
+                    idx = self.subcriteria.index(stats_pair)  # which subcriteria
+                    self.subscale[exp_num, idx, 0, 1] = None
+                    self.subscale[exp_num, idx, 1, 0] = None
 
-            elif self.scale_buttons[stats_pair][0].cget('bg') == self.scale_color:
+            elif self.scale_buttons[stats_pair][0].cget('bg') == self.scale_color:  # index 0 is chosen
                 val = self.scale.index(chosen)
                 val = val * 2 + 1
                 if stats_pair not in self.subcriteria:
                     ind1 = self.criteria.index(stats_pair[0])
                     ind2 = self.criteria.index(stats_pair[1])
-                    self.chosen_scale[ind1, ind2] = val
-                    self.chosen_scale[ind2, ind1] = 1 / val
+                    self.chosen_scale[exp_num, ind1, ind2] = val
+                    self.chosen_scale[exp_num, ind2, ind1] = 1 / val
                 else:
-                    idx = self.subcriteria.index(stats_pair)  # ktory zestaw subkryteriow
-                    # wiem ze waznieszy jest ten zerowy w parze
-                    self.subcriteria_matrix[idx, 0, 1] = val  # ten ważniejszy
-                    self.subcriteria_matrix[idx, 1, 0] = 1 / val
+                    idx = self.subcriteria.index(stats_pair)  # which subcriteria
+                    # the more important is the one at index 0 in tuple
+                    self.subscale[exp_num, idx, 0, 1] = val
+                    self.subscale[exp_num, idx, 1, 0] = 1 / val
 
-            elif self.scale_buttons[stats_pair][1].cget('bg') == self.scale_color:
+            elif self.scale_buttons[stats_pair][1].cget('bg') == self.scale_color: # index 1 is chosen
                 val = self.scale.index(chosen)
                 val = val * 2 + 1
                 if stats_pair not in self.subcriteria:
                     ind1 = self.criteria.index(stats_pair[1])
                     ind2 = self.criteria.index(stats_pair[0])
-                    self.chosen_scale[ind1, ind2] = val
-                    self.chosen_scale[ind2, ind1] = 1 / val
+                    self.chosen_scale[exp_num, ind1, ind2] = val
+                    self.chosen_scale[exp_num, ind2, ind1] = 1 / val
                 else:
-                    idx = self.subcriteria.index(stats_pair)  # ktory zestaw subkryteriow
-                    # wiem ze waznieszy jest ten pierwszy w parze
-                    self.subcriteria_matrix[idx, 0, 1] = 1 / val
-                    self.subcriteria_matrix[idx, 1, 0] = val
+                    idx = self.subcriteria.index(stats_pair)
+                    self.subscale[exp_num, idx, 0, 1] = 1 / val
+                    self.subscale[exp_num, idx, 1, 0] = val
 
-            else:
-                self.incomplete_data = True  # tutaj tego przycisku nie zaznaczylismy
+            else:   # no button is chosen
+                self.incomplete_data = True
                 if stats_pair not in self.subcriteria:
                     ind1 = self.criteria.index(stats_pair[1])
                     ind2 = self.criteria.index(stats_pair[0])
-                    self.chosen_scale[ind1, ind2] = None
-                    self.chosen_scale[ind2, ind1] = None
+                    self.chosen_scale[exp_num, ind1, ind2] = None
+                    self.chosen_scale[exp_num, ind2, ind1] = None
                 else:
-                    idx = self.subcriteria.index(stats_pair)  # ktory zestaw subkryteriow
-                    self.subcriteria_matrix[idx, 0, 1] = None
-                    self.subcriteria_matrix[idx, 1, 0] = None
-        print("subkryteria:", self.subcriteria_matrix)
-        self.start_ranking()
+                    idx = self.subcriteria.index(stats_pair)
+                    self.subscale[exp_num, idx, 0, 1] = None
+                    self.subscale[exp_num, idx, 1, 0] = None
+        if (exp_num + 1) == self.experts:
+            self.start_ranking()
+        else:
+            self.open_scale_window(exp_num + 1)
 
     def open_options_window(self):
         self.delete_widgets()
@@ -278,20 +293,24 @@ class Gui:
         cb.place(x=100, y=100)
 
         label = tk.Label(self.parent,
-                         text='How many experts?',
+                         text='Wpisz liczbę ekspertów',
                          bg='white',
                          font=("Arial", 11))
-
         label.place(x=400, y=50)
 
+        self.entry = tk.Entry(self.parent,
+                              )
+        self.entry.place(x=400, y=100)
+
     def start_ranking(self):
+
         if self.varEVM.get():
             self.method = 'EVM'
         elif self.varGMM.get():
             self.method = 'GMM'
 
-        rank = Ranking(self.chosen_pokemons, self.chosen_scale, self.subcriteria_matrix, self.subcriteria, self.method,
-                       self.incomplete_data)
+        rank = Ranking(self.chosen_pokemons, self.chosen_scale, self.subscale, self.subcriteria, self.method,
+                       self.incomplete_data, self.experts)
         self.ranking = rank.AHP()
 
         self.open_ranking_window()

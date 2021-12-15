@@ -10,5 +10,4 @@ class Pokemon:
         self.crit[3] = dataFrame.iloc[4]  # sp attack
         self.crit[4] = dataFrame.iloc[5] # sp def
         self.crit[5] = dataFrame.iloc[6] # speed
-        # self.crit[6] # mozna tutaj dopisac te wyniki z obliczen subkryteriow 
-        # :oooo nie rozumiem xd
+
