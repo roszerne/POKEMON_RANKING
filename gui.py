@@ -32,9 +32,9 @@ class Gui:
         self.scrollable_frame = None
         self.add_scrollbar()
         self.chosen_pokemons = []
-        self.checkbuttons_var = {}
-        self.checkbuttons_images = {}
-        self.checkbuttons = {}
+        self.checkboxes_var = {}
+        self.checkboxes_images = {}
+        self.checkboxes = {}
 
         # second window
         self.scale_buttons = {}
@@ -112,8 +112,8 @@ class Gui:
             pokemon_image = ImageTk.PhotoImage(image)
 
             var = tk.IntVar(0)
-            self.checkbuttons_var[name] = var
-            self.checkbuttons_images[name] = pokemon_image
+            self.checkboxes_var[name] = var
+            self.checkboxes_images[name] = pokemon_image
             cb = tk.Checkbutton(self.scrollable_frame,
                                 variable=var,
                                 text=self.get_checkbutton_text(i),
@@ -124,14 +124,14 @@ class Gui:
                                 font=("Arial", 11)
                                 )
             cb.grid(sticky="w")  # to keep it aligned
-            self.checkbuttons[name] = cb
+            self.checkboxes[name] = cb
 
     def get_pokemons(self):
         for index, row in self.dataframe.iterrows():
             name = row['Name']
             if " " in name:
                 continue
-            if self.checkbuttons_var[name].get() and not any(pokemon.name == name for pokemon in self.chosen_pokemons):
+            if self.checkboxes_var[name].get() and not any(pokemon.name == name for pokemon in self.chosen_pokemons):
                 self.chosen_pokemons.append(Pokemon(index, row))  # Pokemon class
         self.open_options_window()
 
@@ -339,7 +339,7 @@ class Gui:
                 tk.Label(self.scrollable_frame, text="{}".format(i + 1), font=("Arial", font_size), bg='white', bd=0))
             numbers[i].grid(column=1, row=i + 1, padx=10)
 
-            pokemon_images_label = tk.Label(self.scrollable_frame, image=self.checkbuttons_images[pokemon.name], bd=0)
+            pokemon_images_label = tk.Label(self.scrollable_frame, image=self.checkboxes_images[pokemon.name], bd=0)
             pokemon_images.append(pokemon_images_label)
             pokemon_images[i].grid(column=2, row=i + 1, padx=10, pady=10)
 
