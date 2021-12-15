@@ -13,6 +13,7 @@ class Ranking:
     def __init__(self, pokemons, scale, subcriteria_scale, subcriteria, method, incomplete_data):
         self.method = method
         self.incomplete_data = incomplete_data
+        self.experts = 1 # how many experts do we have
         self.pokemons = pokemons
         self.scale = scale  # 2nd level PC matrix
         self.N = len(pokemons)  # numbers of alternatives
@@ -28,6 +29,16 @@ class Ranking:
         self.priority_vector = np.zeros((self.final_crit, 1),
                                         dtype='double')  # priority vector derived from 2nd level PC matrix
         self.CI = None
+
+    def aggregation(self):
+        for i in range(1, self.experts):
+                self.scale[0,:,:] = np.dot(self.scale[0,:,:], self.scale[i,:,:])
+
+        for i in range(1, self.experts):
+            self.subscriteria_scale[0,:,:,:] = np.dot(self.subscriteria_scale[0,:,:,:], self.scale[i,:,:,:])
+
+        self.scale = self.scale[0,:,:]
+        self.subscriteria_scale = self.subscriteria_scale[0,:,:,:]
 
     def endurence_subcrit(self):
         A = self.priorities[:, 0] # HP
@@ -318,6 +329,11 @@ class Ranking:
         print("GW: ", GW)
 
     def AHP(self):
+
+        # if we have more than 1 expert
+        if self.experts > 1:
+            self.aggregation()
+
         # create PC matrices
         self.createCriterion()
 
