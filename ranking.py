@@ -28,7 +28,6 @@ class Ranking:
                                     dtype='double')  # priority vectors of 1st level PC matrices
         self.priority_vector = np.zeros((self.final_crit, 1),
                                         dtype='double')  # priority vector derived from 2nd level PC matrix
-        self.CI = None
 
     # creating one matrix 
     def aggregation(self):
@@ -37,7 +36,7 @@ class Ranking:
         print("SCALE: ", self.scale)
 
         for i in range(self.experts):
-            self.SaatyCI(self.scale[i,:,:], i)
+            self.CI(self.scale[i,:,:], i)
 
         for e in range(1, self.experts):
             for i in range(self.final_crit):
@@ -307,7 +306,7 @@ class Ranking:
         self.sub_r = r
 
 
-    def SaatyCI(self, scale, num_exp = -1):
+    def CI(self, scale, num_exp = -1):
         for i in range(len(scale)):
             for j in range(len(scale)):
                 if np.isnan(scale[i,j]):
@@ -319,36 +318,39 @@ class Ranking:
         consistency_index = (w_max - len(self.scale)) / (len(self.scale) - 1)
         RI4 = 0.83
         CR = consistency_index / RI4
+        GW = self.GoldenWangCI(scale)
         if num_exp == -1:
             print(f"CI  = {consistency_index}")
             print(f"CR = {CR} ")
+            print(f"GW = {GW}")
         else:
             print(f"CI, expert {num_exp} = {consistency_index}")
             print(f"CR, expert {num_exp} = {CR} ")
+            print(f"GW, expert {num_exp} = {GW}")
 
 
     # Golden-Wang method for calculating Consistency Index (for complete matrices)
-    def GoldenWangCI(self):
-        goldeb_wang = 0
-        size = len(self.scale)
+    def GoldenWangCI(self, scale):
+        golden_wang = 0
+        size = len(scale)
         scale_new = np.zeros((size, size))
 
         priority_v = np.zeros((size, 1))
         for i in range(size):
-            priority_v[i] = gmean(self.scale[i])
+            priority_v[i] = gmean(scale[i])
         priority_v /= priority_v.sum()
-        print("Priority vector in goldeb_wang: ", priority_v)
 
         # normalizing matrix scale by dividing each value by the sum of column - every column sums up to 1 now
         for i in range(size):
             for j in range(size):
-                scale_new[i, j] = self.scale[i, j] / self.scale.sum(axis=0)[i]
+                scale_new[i, j] = scale[i, j] / scale.sum(axis=0)[i]
 
         for i in range(size):
             for j in range(size):
-                goldeb_wang += abs(scale_new[i, j] - self.priority_vector[i])
-        goldeb_wang /= size
-        print("goldeb_wang: ", goldeb_wang)
+                golden_wang += abs(scale_new[i, j] - self.priority_vector[i])
+        golden_wang /= size
+
+        return golden_wang
 
     def AHP(self):
         self.aggregation()
@@ -362,9 +364,7 @@ class Ranking:
             self.IncompleteDataEV()
             self.EigenvalueMethod()
 
-        # self.SaatyCI(self.scale)
-        if not self.incomplete_data:
-            self.GoldenWangCI()
+        self.CI(self.scale)
 
         print('Priorities: ', self.priorities2)
         print('eigenvector of C2: ', self.priority_vector)
