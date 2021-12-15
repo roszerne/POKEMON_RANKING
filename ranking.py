@@ -36,13 +36,27 @@ class Ranking:
         print("SUBSCALE: ", self.subscale)
         print("SCALE: ", self.scale)
 
-        for i in range(1, self.experts):
-            self.scale[0, :, :] = np.dot(self.scale[0, :, :], self.scale[i, :, :])
+        for i in range(self.experts):
+            self.SaatyCI(self.scale[i,:,:], i)
 
-        for i in range(1, self.experts):
-            for j in range(len(self.subscriteria)):
-                self.subscale[0, j, :, :] = np.dot(self.subscale[0, j, :, :],
-                                                   self.subscale[i, j, :, :])
+        for e in range(1, self.experts):
+            for i in range(self.final_crit):
+                for j in range(self.final_crit):
+                    if np.isnan(self.scale[0, i, j]):
+                        self.scale[0, i, j] = 1
+                    if np.isnan(self.scale[e,i,j]) and self.experts > 1:
+                        self.scale[e,i,j] = 1
+                    self.scale[0, i, j] = self.scale[0, i, j] * self.scale[e, i, j]
+
+        for e in range(1, self.experts):
+            for s in range(len(self.subscriteria)):
+                for i in range(2):
+                    for j in range(2):
+                        if np.isnan(self.subscale[e,s,i,j]):
+                            self.subscale[e,s,i,j] = 1
+                        if np.isnan(self.subscale[0, s, i, j]) and self.experts > 1:
+                            self.subscale[0, s, i, j] = 1
+                        self.subscale[0, s, i, j,] = self.subscale[0, s, i, j] * self.subscale[e, s, i, j]
 
         self.scale = self.scale[0, :, :]
         self.subscale = self.subscale[0, :, :, :]
@@ -203,7 +217,6 @@ class Ranking:
         for i in range(len(self.scale)):
             for j in range(i + 1, len(self.scale)):
                 if np.isnan(self.scale[i, j]):  # if the value is unknown
-                    print("siema")
                     lacking_elements[i] += 1
                     lacking_elements[j] += 1
                     B[i, j] = 0
@@ -297,21 +310,25 @@ class Ranking:
 
         # dla danych kompletnych i niekompletnych (wtedy bierzemy eig z B a u nas self.scale = B)
 
-    def SaatyCI(self):
-        w, v = LA.eig(self.scale)
+    def SaatyCI(self, scale, num_exp = -1):
+        for i in range(len(scale)):
+            for j in range(len(scale)):
+                if np.isnan(scale[i,j]):
+                    return
+        print(num_exp)
+        w, v = LA.eig(scale)
         w = abs(w)
         w_max = max(w)
         consistency_index = (w_max - len(self.scale)) / (len(self.scale) - 1)
-
-        self.CI = consistency_index
-
-        print("CI Saaty", self.CI)
-
-    # Random consistency index
-    def CalculateCR(self):
         RI4 = 0.83
-        CR = self.CI / RI4
-        print("CR (scale): ", CR)
+        CR = consistency_index / RI4
+        if num_exp == -1:
+            print(f"CI  = {consistency_index}")
+            print(f"CR = {CR} ")
+        else:
+            print(f"CI, expert {num_exp} = {consistency_index}")
+            print(f"CR, expert {num_exp} = {CR} ")
+
 
     # Golden-Wang method for calculating Consistency Index (for complete matrices)
     def GoldenWangCI(self):
@@ -337,24 +354,18 @@ class Ranking:
         print("goldeb_wang: ", goldeb_wang)
 
     def AHP(self):
-
         self.aggregation()
-
         # create PC matrices
         self.createCriterion()
 
         if self.method == 'GMM':
-            if self.incomplete_data:
-                self.IncompleteDataGMM()
+            self.IncompleteDataGMM()
             self.GMM()
         else:
-            if self.incomplete_data:
-                print("incomplete")
-                self.IncompleteDataEV()
+            self.IncompleteDataEV()
             self.EigenvalueMethod()
 
-        self.SaatyCI()
-        self.CalculateCR()
+        # self.SaatyCI(self.scale)
         if not self.incomplete_data:
             self.GoldenWangCI()
 
