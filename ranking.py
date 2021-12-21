@@ -10,9 +10,10 @@ def is_invertible(a):
 
 
 class Ranking:
-    def __init__(self, pokemons, scale, subcriteria_scale, subcriteria, method, incomplete_data, experts):
+    def __init__(self, pokemons, scale, subcriteria_scale, subcriteria, method, incomplete_data, incomplete_sub, experts):
         self.method = method
         self.incomplete_data = incomplete_data
+        self.incomplete_sub = incomplete_sub
         self.experts = experts  # how many experts do we have
         self.pokemons = pokemons
         self.scale = scale  # 2nd level PC matrix
@@ -34,6 +35,7 @@ class Ranking:
         print("NUMBERS OF EKSPERTS: ", self.experts)
         print("SUBSCALE: ", self.subscale)
         print("SCALE: ", self.scale)
+        print("incomplete_data = ", self.incomplete_data)
 
         for i in range(self.experts):
             self.CI(self.scale[i,:,:], i)
@@ -194,9 +196,10 @@ class Ranking:
             self.priorities[:, idx][i] = row_gmm[i] / row_gmm.sum()
 
     def SecondLevelGMM(self):
-        if self.incomplete_data == False:
+        if not self.incomplete_data:
             for i in range(len(self.scale)):
                 self.priority_vector[i] = gmean(self.scale[i])
+            print("priority v = ", self.priority_vector)
         else:
             w_hat = (np.array(np.linalg.solve(self.scale, self.r))).reshape(len(self.scale), 1)
             es = (np.array([math.e for i in range(len(self.scale))])).reshape(len(self.scale), 1)
@@ -307,26 +310,23 @@ class Ranking:
 
 
     def CI(self, scale, num_exp = -1):
+        # liczony tylko dla kompletnych danych
         for i in range(len(scale)):
             for j in range(len(scale)):
                 if np.isnan(scale[i,j]):
                     return
-        print(num_exp)
         w, v = LA.eig(scale)
         w = abs(w)
         w_max = max(w)
-        consistency_index = (w_max - len(self.scale)) / (len(self.scale) - 1)
+        consistency_index = (w_max - len(scale[0])) / (len(scale[0]) - 1)
         RI4 = 0.83
         CR = consistency_index / RI4
-        GW = self.GoldenWangCI(scale)
         if num_exp == -1:
             print(f"CI  = {consistency_index}")
             print(f"CR = {CR} ")
-            print(f"GW = {GW}")
         else:
             print(f"CI, expert {num_exp} = {consistency_index}")
             print(f"CR, expert {num_exp} = {CR} ")
-            print(f"GW, expert {num_exp} = {GW}")
 
 
     # Golden-Wang method for calculating Consistency Index (for complete matrices)
@@ -350,21 +350,25 @@ class Ranking:
                 golden_wang += abs(scale_new[i, j] - self.priority_vector[i])
         golden_wang /= size
 
-        return golden_wang
+        print("GW: " , golden_wang)
 
     def AHP(self):
         self.aggregation()
+
         # create PC matrices
         self.createCriterion()
 
+        # incomplete matrices only for 1 expert
         if self.method == 'GMM':
-            self.IncompleteDataGMM()
+            if ((self.incomplete_data or self.incomplete_sub) and self.experts == 1):
+                self.IncompleteDataGMM()
             self.GMM()
         else:
-            self.IncompleteDataEV()
+            if (self.incomplete_data and self.experts == 1):
+                self.IncompleteDataEV()
             self.EigenvalueMethod()
 
-        self.CI(self.scale)
+
 
         print('Priorities: ', self.priorities2)
         print('eigenvector of C2: ', self.priority_vector)

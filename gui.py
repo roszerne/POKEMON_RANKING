@@ -56,6 +56,7 @@ class Gui:
         self.varEVM = tk.IntVar(0)
         self.varGMM = tk.IntVar(0)
         self.incomplete_data = False
+        self.incomplete_sub= False
         self.method = 'EVM'  # default method
 
         # create 1st window
@@ -214,14 +215,15 @@ class Gui:
         for stats_pair in all:
             chosen = self.scale_var[stats_pair].get()
             if not chosen:  # nothing in combobox
-                self.incomplete_data = True
                 if stats_pair not in self.subcriteria:
+                    self.incomplete_data = True
                     ind1 = self.criteria.index(stats_pair[1])
                     ind2 = self.criteria.index(stats_pair[0])
                     self.chosen_scale[exp_num, ind1, ind2] = None
                     self.chosen_scale[exp_num, ind2, ind1] = None
                 else:
                     idx = self.subcriteria.index(stats_pair)  # which subcriteria
+                    self.incomplete_sub = True
                     self.subscale[exp_num, idx, 0, 1] = None
                     self.subscale[exp_num, idx, 1, 0] = None
 
@@ -253,14 +255,15 @@ class Gui:
                     self.subscale[exp_num, idx, 1, 0] = val
 
             else:   # no button is chosen
-                self.incomplete_data = True
                 if stats_pair not in self.subcriteria:
+                    self.incomplete_data = True
                     ind1 = self.criteria.index(stats_pair[1])
                     ind2 = self.criteria.index(stats_pair[0])
                     self.chosen_scale[exp_num, ind1, ind2] = None
                     self.chosen_scale[exp_num, ind2, ind1] = None
                 else:
                     idx = self.subcriteria.index(stats_pair)
+                    self.incomplete_sub = True
                     self.subscale[exp_num, idx, 0, 1] = None
                     self.subscale[exp_num, idx, 1, 0] = None
 
@@ -313,7 +316,7 @@ class Gui:
             self.method = 'GMM'
 
         rank = Ranking(self.chosen_pokemons, self.chosen_scale, self.subscale, self.subcriteria, self.method,
-                       self.incomplete_data, self.experts)
+                       self.incomplete_data, self.incomplete_sub, self.experts)
         self.ranking = rank.AHP()
 
         self.open_ranking_window()
@@ -332,6 +335,7 @@ class Gui:
         for i in range(len(self.chosen_pokemons)):
             result = sorted_ranking[i]
             idx, = np.where(self.ranking == result)
+            print(idx)
             pokemon = self.chosen_pokemons[idx[0]]
             font_size = 13
 
