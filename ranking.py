@@ -142,17 +142,17 @@ class Ranking:
         C = np.zeros((self.N, 2), dtype="double")
         C[:, 0] = A
         C[:, 1] = B
-        if self.incomplete_data is False or is_invertible(self.subscale[1, :, :]) is False:
+        if self.incomplete_data is False :
             A = self.subscale[1, :, :]
             self.priorities2[:, 0] = np.dot(C, gmean(A))
         else:
-            w_hat = (np.array(np.linalg.solve(self.subscale[1, :, :], self.sub_r[:, 1]))).reshape(2, 1)
+            '''w_hat = (np.array(np.linalg.solve(self.subscale[1, :, :], self.sub_r[:, 1]))).reshape(2, 1)
             es = (np.array([math.e for _ in range(2)])).reshape(2, 1)
             w_hat = pow(es, w_hat)
             w_hat = w_hat.reshape(2, 1)
             A = np.dot(C, w_hat)
-            for i in range(0, self.N):
-                self.priorities2[i, 0] = A[i]
+            for i in range(0, self.N):'''
+            self.priorities2[:, 0] = 0
 
     def special_subcrit_gmm(self):
         A = self.priorities[:, 3]  # HP
@@ -160,17 +160,17 @@ class Ranking:
         C = np.zeros((self.N, 2), dtype="double")
         C[:, 0] = A
         C[:, 1] = B
-        if self.incomplete_data is False or is_invertible(self.subscale[0, :, :]) is False:
+        if self.incomplete_data is False:
             A = self.subscale[0, :, :]  # subcriterions scale for special
             self.priorities2[:, 1] = np.dot(C, gmean(A))
         else:
-            w_hat = (np.array(np.linalg.solve(self.subscale[0, :, :], self.sub_r[:, 0]))).reshape(2, 1)
+            '''w_hat = (np.array(np.linalg.solve(self.subscale[0, :, :], self.sub_r[:, 0]))).reshape(2, 1)
             es = (np.array([math.e for _ in range(2)])).reshape(2, 1)
             w_hat = pow(es, w_hat)
             w_hat = w_hat.reshape(2, 1)
             A = np.dot(C, w_hat)
-            for i in range(0, self.N):
-                self.priorities2[i, 1] = A[i]
+            for i in range(0, self.N):'''
+            self.priorities2[:, 1] = 0
 
     def createSubCriterion_gmm(self):
         self.endurence_subcrit_gmm()  # Endurance
@@ -255,6 +255,7 @@ class Ranking:
         self.subscale = B
 
     def IncompleteDataGMM(self):
+        
         G = np.zeros((len(self.scale), len(self.scale)), dtype='double')
         lacking_elements = [0] * len(self.scale)
         for i in range(len(self.scale)):
@@ -271,43 +272,17 @@ class Ranking:
             G[i, i] = len(self.scale) - lacking_elements[i]
 
         r = np.zeros((len(self.scale), 1), dtype='double')
+        temp = np.zeros((len(self.scale), 1),dtype= 'double')
         for i in range(len(self.scale)):
-            r[i] = np.nansum(self.scale[i, :])  # sum of a row
-            r[i] = math.log(r[i])  # make a natural log of it
+            temp = np.log(self.scale[i, :])
+            r[i] = np.nansum(temp)  # sum of a row
+            if math.isnan(r[i]):
+                r[i] = 0
 
         self.scale = G
         self.r = r
         print("INCOMPLETE G: ", G)
         print("INCOMPLETE R: ", r)
-
-        # subcriteria
-        G = np.zeros((2, 2, 2))
-        r = np.zeros((2, 2), dtype='double')
-        for i in range(2):
-            lacking_elements = [0] * 2
-            for j in range(2):
-                for k in range(j, 2):
-                    if np.isnan(self.subscale[i, j, k]):
-                        lacking_elements[j] += 1
-                        lacking_elements[k] += 1
-                        G[i, j, k] = 1
-                        G[i, k, j] = 1
-                    else:
-                        G[i, j, k] = 0
-                        G[i, k, j] = 0
-            # calculating diagonal values of matrix B
-            for j in range(2):
-                G[i, j, j] = 2 - lacking_elements[j]
-
-        for i in range(2):
-            for j in range(2):
-                r[j, i] = np.nansum(self.subscale[i, j, :])  # sum of a row
-                r[j, i] = math.log(r[j, i])  # make a natural log of it
-        print("SUB_R:", r)
-        # G is new scale used in GMM method
-        self.subscale = G
-        self.sub_r = r
-
 
     def CI(self, scale, num_exp = -1):
         # liczony tylko dla kompletnych danych
@@ -360,7 +335,7 @@ class Ranking:
 
         # incomplete matrices only for 1 expert
         if self.method == 'GMM':
-            if ((self.incomplete_data or self.incomplete_sub) and self.experts == 1):
+            if ((self.incomplete_data or self.incomplete_sub)):
                 self.IncompleteDataGMM()
             self.GMM()
         else:
