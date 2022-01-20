@@ -32,10 +32,10 @@ class Ranking:
 
     # creating one matrix 
     def aggregation(self):
-        print("NUMBERS OF EKSPERTS: ", self.experts)
-        print("SUBSCALE: ", self.subscale)
-        print("SCALE: ", self.scale)
-        print("incomplete_data = ", self.incomplete_data)
+        print("NUMBERS OF EXPERTS: ", self.experts)
+       # print("SUBSCALE: ", self.subscale)
+       # print("SCALE: ", self.scale)
+       # print("incomplete_data = ", self.incomplete_data)
 
         for i in range(self.experts):
             self.CI(self.scale[i,:,:], i)
@@ -63,8 +63,8 @@ class Ranking:
         self.subscale = self.subscale[0, :, :, :]
         self.scale = np.power(self.scale, (1 / self.experts))
         self.subscale = np.power(self.subscale, (1 / self.experts))
-        print("Aggregated Scale: ", self.scale)
-        print("Aggregated Subscale: ", self.subscale)
+       # print("Aggregated Scale: ", self.scale)
+       # print("Aggregated Subscale: ", self.subscale)
 
     def endurence_subcrit(self):
         A = self.priorities[:, 0]  # HP
@@ -180,7 +180,7 @@ class Ranking:
         self.priorities2 = self.priorities2 / self.priorities2.sum()  # normalize vector 
 
     def GMM(self):
-        print(self.C)
+      #  print(self.C)
         for i in range(self.criterions):
             A = self.C[i, :, :]
             self.FirstLevelGMM(A, i)
@@ -199,13 +199,13 @@ class Ranking:
         if not self.incomplete_data:
             for i in range(len(self.scale)):
                 self.priority_vector[i] = gmean(self.scale[i])
-            print("priority v = ", self.priority_vector)
+           # print("priority v = ", self.priority_vector)
         else:
             w_hat = (np.array(np.linalg.solve(self.scale, self.r))).reshape(len(self.scale), 1)
             es = (np.array([math.e for i in range(len(self.scale))])).reshape(len(self.scale), 1)
             w_hat = pow(es, w_hat)
             self.priority_vector = w_hat.reshape(len(self.scale), 1)
-            print("W HAT: ", self.priority_vector)
+           # print("W HAT: ", self.priority_vector)
 
         self.priority_vector /= self.priority_vector.sum()
         self.priority_vector = self.priority_vector[:, 0]
@@ -227,7 +227,7 @@ class Ranking:
         # calculating diagonal values of matrix B
         for i in range(len(self.scale)):
             B[i, i] = lacking_elements[i] + 1
-        print("B: ", B)
+       # print("B: ", B)
         # B is new scale used in EVM method
         self.scale = B
 
@@ -250,7 +250,7 @@ class Ranking:
             for j in range(2):
                 B[i, j, j] = lacking_elements[j] + 1
 
-        print("B: ", B)
+       # print("B: ", B)
         # B is new scale used in EVM method
         self.subscale = B
 
@@ -281,8 +281,8 @@ class Ranking:
 
         self.scale = G
         self.r = r
-        print("INCOMPLETE G: ", G)
-        print("INCOMPLETE R: ", r)
+       # print("INCOMPLETE G: ", G)
+      #  print("INCOMPLETE R: ", r)
 
     def CI(self, scale, num_exp = -1):
         # liczony tylko dla kompletnych danych
@@ -349,5 +349,5 @@ class Ranking:
         print('eigenvector of C2: ', self.priority_vector)
         final = np.dot(self.priorities2, self.priority_vector)
         final = final / final.sum()  # normalise sum
-        print('Final: ', final)
+        print('Final vector: ', final)
         return final
