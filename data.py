@@ -3,7 +3,6 @@ import lxml.html as lh
 import pandas as pd
 
 
-
 def make_header(tr_elements):
     col = []
     i = 0
@@ -13,12 +12,12 @@ def make_header(tr_elements):
         i += 1
         name = t.text_content()
         col.append((name, []))
-
     return col
 
-def get_data(tr_elements, col,how_many):
+
+def get_data(tr_elements, col, how_many):
     # Since out first row is the header, data is stored on the second row onwards
-    for j in range(1, how_many+1):
+    for j in range(1, how_many + 1):
         # T is our j'th row
         T = tr_elements[j]
         if j == 41 or j == 44 or j == 111 or j == 112:
@@ -45,6 +44,7 @@ def get_data(tr_elements, col,how_many):
             # Increment i for the next column
             i += 1
 
+
 def data(how_many):
     url = 'http://pokemondb.net/pokedex/all'
     page = requests.get(url)
@@ -52,10 +52,9 @@ def data(how_many):
     doc = lh.fromstring(page.content)
     tr_elements = doc.xpath('//tr')
     col = make_header(tr_elements)
-    get_data(tr_elements, col,how_many)
-    Dict={title:column for (title,column) in col}
-    df=pd.DataFrame(Dict)
+    get_data(tr_elements, col, how_many)
+    Dict = {title: column for (title, column) in col}
+    df = pd.DataFrame(Dict)
     # df = df.drop(columns = ['Type', 'Total', 'Sp. Atk', 'Sp. Def']) # remove type and total column
-    df = df.drop(columns = ['Type', 'Total']) # remove type and total column
+    df = df.drop(columns=['Type', 'Total'])  # remove type and total column
     df.to_json('PokemonData.json')
-

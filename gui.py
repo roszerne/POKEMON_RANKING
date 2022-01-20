@@ -1,5 +1,8 @@
 import tkinter as tk
+from tkinter import messagebox
 from tkinter import ttk
+from ttkthemes import themed_tk as tk_theme
+from ttkwidgets import Table
 
 import io
 import itertools
@@ -27,7 +30,7 @@ class Gui:
         self.container = tk.Frame(parent, bg='white')
         self.canvas = tk.Canvas(self.container, width=self.size, height=self.size, bg='white', highlightthickness=0)
 
-        self.set_data(10)
+        self.set_data(20)
 
         self.scrollable_frame = None
         self.add_scrollbar()
@@ -49,21 +52,29 @@ class Gui:
         self.criteria = ['Endurance', 'Special', 'Attack', 'Speed']  # main criteria
         self.chosen_scale = None
         self.subscale = None
+        self.clicked_buttons = {}
 
         self.ranking = []
         self.entry = None
-        self.experts = 1 # number of experts, default is 1
-        self.varEVM = tk.IntVar(0)
-        self.varGMM = tk.IntVar(0)
+        self.experts = 1  # number of experts, default is 1
+        self.varMETHOD = tk.StringVar()
         self.incomplete_data = False
-        self.incomplete_sub= False
-        self.method = 'EVM'  # default method
+        self.incomplete_sub = False
 
         # create 1st window
         self.set_checkboxes()
         self.set_ok_button(1)
         self.container.pack()
         self.canvas.pack(side="left", fill="both", expand=True)
+
+        self.s = ttk.Style()
+        self.s.configure('.', font=('Helvetica', 13), background='white', focusthickness=3)
+
+        self.ACTIVE_BUTTON = ttk.Style()
+        self.ACTIVE_BUTTON.configure("ActiveButton.TButton", foreground='blue')
+
+        self.BUTTON = ttk.Style()
+        self.BUTTON.configure("Button.TButton", font=('Helvetica', 12), background='white')
 
     def set_data(self, how_many):
         data.data(how_many)
@@ -79,10 +90,10 @@ class Gui:
         if i == 1:  # after 1st window
             button1 = tk.Button(self.parent, image=ok_button, command=lambda: self.get_pokemons(), borderwidth=0,
                                 bg='white')
-        elif i == 2: # after window with buttons and checkboxes, exp_num is the number of choosing expert
+        elif i == 2:  # after window with buttons and checkboxes, exp_num is the number of choosing expert
             button1 = tk.Button(self.parent, image=ok_button, command=lambda: self.get_scale(exp_num), borderwidth=0,
                                 bg='white')
-        else: # after the option window, getting the number of experts and which method is to be used
+        else:  # after the option window, getting the number of experts and which method is to be used
             button1 = tk.Button(self.parent, image=ok_button, command=lambda: self.get_experts(), borderwidth=0,
                                 bg='white')
         button1.pack()
@@ -101,6 +112,14 @@ class Gui:
 
     # checkboxes in 1st window
     def set_checkboxes(self):
+
+        # columns =["Name"] + self.stats
+        # table = Table(self.scrollable_frame, columns=columns, sortable=False, drag_cols=False,
+        #               drag_rows=False, height = 20)
+        # for col in columns:
+        #     table.heading(col, text=col)
+        #     table.column(col, width=100, stretch=False, anchor='center')
+
         for i, name in enumerate(self.dataframe['Name']):
             if " " in name:
                 continue
@@ -115,17 +134,21 @@ class Gui:
             var = tk.IntVar(0)
             self.checkboxes_var[name] = var
             self.checkboxes_images[name] = pokemon_image
-            cb = tk.Checkbutton(self.scrollable_frame,
-                                variable=var,
-                                text=self.get_checkbutton_text(i),
-                                offvalue=0,
-                                image=pokemon_image,
-                                compound='left',
-                                bg='white',
-                                font=("Arial", 11)
-                                )
+
+            cb = ttk.Checkbutton(self.scrollable_frame,
+                                 variable=var,
+                                 # text=self.get_checkbutton_text(i),
+                                 image=pokemon_image
+                                 )
             cb.grid(sticky="w")  # to keep it aligned
             self.checkboxes[name] = cb
+
+        #     var = str(list(self.dataframe.to_records(index=False))[i]).strip('(')
+        #     var.strip(")")
+        #     table.insert('', 'end', values=var)
+        #
+        # table.grid()
+
 
     def get_pokemons(self):
         for index, row in self.dataframe.iterrows():
@@ -146,6 +169,13 @@ class Gui:
         return res
 
     def get_experts(self):
+        if not self.entry.get() or not self.entry.get().isdigit():
+            messagebox.showerror("ERROR", "Wpisz odpowiednią liczbę ekspertów")
+            return
+        if not self.varMETHOD.get():
+            messagebox.showerror("ERROR", "Wybierz metodę")
+            return
+
         self.experts = int(self.entry.get())
         # creating matrices after getting the num od experts
         self.chosen_scale = np.ones((self.experts, len(self.criteria), len(self.criteria)),
@@ -192,24 +222,30 @@ class Gui:
 
     # buttons for crietria and subcriteria
     def create_buttons(self, stat, i):
-        button1 = tk.Button(self.scrollable_frame, text=stat[0], height=1, width=15, font=("Arial", 11), bg='white',
-                            bd=3, relief='ridge')
-        button2 = tk.Button(self.scrollable_frame, text=stat[1], height=1, width=15, font=("Arial", 11), bg='white',
-                            bd=3, relief='ridge')
+        self.clicked_buttons[stat] = (False, False)
+        button1 = ttk.Button(self.scrollable_frame, text=stat[0], style='Button.TButton')
+        button2 = ttk.Button(self.scrollable_frame, text=stat[1], style='Button.TButton')
         button1.grid(column=3, row=i + 2, padx=20, pady=20)
         button2.grid(column=5, row=i + 2, padx=20, pady=20)
         self.scale_buttons[stat] = (button1, button2)
-        button1.configure(command=lambda: self.color_change(stat, 0))
-        button2.configure(command=lambda: self.color_change(stat, 1))
+        button1.configure(command=lambda: self.click_button(0, stat))
+        button2.configure(command=lambda: self.click_button(1, stat))
 
-    def color_change(self, stat, i):
-        if self.scale_buttons[stat][i].cget('bg') == self.scale_color:
-            self.scale_buttons[stat][i].configure(bg='white')
+    def click_button(self, button, stat):
+        var = self.clicked_buttons[stat][button]
+        if not var:
+            if button == 0:
+                button_tuple = (True, False)
+            else:
+                button_tuple = (False, True)
+            self.clicked_buttons[stat] = button_tuple
+            self.scale_buttons[stat][button].configure(style="ActiveButton.TButton")
+            self.scale_buttons[stat][(button + 1) % 2].configure(style='Button.TButton')
         else:
-            self.scale_buttons[stat][i].configure(bg=self.scale_color)
-            self.scale_buttons[stat][(i + 1) % 2].configure(bg='white')
+            self.clicked_buttons[stat] = (False, False)
+            self.scale_buttons[stat][0].configure(style='Button.TButton')
+            self.scale_buttons[stat][1].configure(style='Button.TButton')
 
-    # getting the opinion of each an expert (exp_num indicates which expert)
     def get_scale(self, exp_num):
         all = list(itertools.combinations(self.criteria, 2)) + self.subcriteria
         for stats_pair in all:
@@ -227,7 +263,7 @@ class Gui:
                     self.subscale[exp_num, idx, 0, 1] = None
                     self.subscale[exp_num, idx, 1, 0] = None
 
-            elif self.scale_buttons[stats_pair][0].cget('bg') == self.scale_color:  # index 0 is chosen
+            elif self.clicked_buttons[stats_pair][0]:  # index 0 is chosen
                 val = self.scale.index(chosen)
                 val = val * 2 + 1
                 if stats_pair not in self.subcriteria:
@@ -241,7 +277,7 @@ class Gui:
                     self.subscale[exp_num, idx, 0, 1] = val
                     self.subscale[exp_num, idx, 1, 0] = 1 / val
 
-            elif self.scale_buttons[stats_pair][1].cget('bg') == self.scale_color: # index 1 is chosen
+            elif self.clicked_buttons[stats_pair][1]:  # index 1 is chosen
                 val = self.scale.index(chosen)
                 val = val * 2 + 1
                 if stats_pair not in self.subcriteria:
@@ -254,7 +290,7 @@ class Gui:
                     self.subscale[exp_num, idx, 0, 1] = 1 / val
                     self.subscale[exp_num, idx, 1, 0] = val
 
-            else:   # no button is chosen
+            else:  # no button is chosen
                 if stats_pair not in self.subcriteria:
                     self.incomplete_data = True
                     ind1 = self.criteria.index(stats_pair[1])
@@ -267,53 +303,47 @@ class Gui:
                     self.subscale[exp_num, idx, 0, 1] = None
                     self.subscale[exp_num, idx, 1, 0] = None
 
+        print(self.chosen_scale)
         # if all experts has spoken
         if (exp_num + 1) == self.experts:
             print("go to ranking")
             self.start_ranking()
-        else: # cotinue opening scale windows
+        else:  # cotinue opening scale windows
             self.open_scale_window(exp_num + 1)
 
     def open_options_window(self):
         self.delete_widgets()
         self.set_ok_button(3)
 
-        cb = tk.Checkbutton(self.parent,
-                            variable=self.varEVM,
-                            text="EVM",
-                            offvalue=0,
-                            compound='left',
-                            bg='white',
-                            font=("Arial", 11)
-                            )
-        cb.place(x=100, y=50)
+        cb = ttk.Radiobutton(self.parent,
+                             variable=self.varMETHOD,
+                             value='EVM',
+                             text="EVM",
+                             compound='left'
+                             )
+        cb.place(x=250, y=100)
 
-        cb = tk.Checkbutton(self.parent,
-                            variable=self.varGMM,
-                            text="GMM",
-                            offvalue=0,
-                            compound='left',
-                            bg='white',
-                            font=("Arial", 11)
-                            )
-        cb.place(x=100, y=100)
+        cb = ttk.Radiobutton(self.parent,
+                             variable=self.varMETHOD,
+                             value='GMM',
+                             text="GMM",
+                             compound='left'
+                             )
 
-        label = tk.Label(self.parent,
-                         text='Wpisz liczbę ekspertów',
-                         bg='white',
-                         font=("Arial", 11))
-        label.place(x=400, y=50)
+        cb.place(x=250, y=150)
+        s = ttk.Style()
+        s.configure('Entry.TLabel', font=('Helvetica', 14), background='white', focusthickness=3)
 
-        self.entry = tk.Entry(self.parent,
-                              )
-        self.entry.place(x=400, y=100)
+        label = ttk.Label(self.parent,
+                          text='Wpisz liczbę ekspertów', style = 'Entry.TLabel')
+        label.place(x=200, y=300)
+
+        self.entry = ttk.Entry(self.parent, width = 20, font = ('Helvetica', 15))
+        self.entry.place(x=190, y=350)
 
     def start_ranking(self):
         # which method is chosen
-        if self.varEVM.get():
-            self.method = 'EVM'
-        elif self.varGMM.get():
-            self.method = 'GMM'
+        self.method = self.varMETHOD.get()
 
         rank = Ranking(self.chosen_pokemons, self.chosen_scale, self.subscale, self.subcriteria, self.method,
                        self.incomplete_data, self.incomplete_sub, self.experts)
@@ -328,33 +358,29 @@ class Gui:
         self.add_scrollbar()
 
         numbers = []
-        sorted_ranking = sorted(self.ranking, reverse=True) # sorting the ranking
+        sorted_ranking = sorted(self.ranking, reverse=True)  # sorting the ranking
         pokemon_images = []
 
         # displaying pokemons and the results
         for i in range(len(self.chosen_pokemons)):
             result = sorted_ranking[i]
             idx, = np.where(self.ranking == result)
-            print(idx)
             pokemon = self.chosen_pokemons[idx[0]]
             font_size = 13
 
             numbers.append(
-                tk.Label(self.scrollable_frame, text="{}".format(i + 1), font=("Arial", font_size), bg='white', bd=0))
+                ttk.Label(self.scrollable_frame, text="{}".format(i + 1)))
             numbers[i].grid(column=1, row=i + 1, padx=10)
 
-            pokemon_images_label = tk.Label(self.scrollable_frame, image=self.checkboxes_images[pokemon.name], bd=0)
+            pokemon_images_label = ttk.Label(self.scrollable_frame, image=self.checkboxes_images[pokemon.name])
             pokemon_images.append(pokemon_images_label)
             pokemon_images[i].grid(column=2, row=i + 1, padx=10, pady=10)
 
-            ranking_button = tk.Button(self.scrollable_frame, text=pokemon.name + ':   ' + str(round(result, 3)),
-                                       font=("Arial", font_size),
-                                       bg='white', bd=0)
+            ranking_button = ttk.Button(self.scrollable_frame, text=pokemon.name + ':   ' + str(round(result, 3)))
             ranking_button.grid(column=3, row=i + 1, padx=10)
 
-            stats_label = tk.Button(self.scrollable_frame, text=pokemon.df[1:].to_string(),
-                                    font=("Arial", font_size - 2),
-                                    bg='white', bd=0)
+            stats_label = ttk.Label(self.scrollable_frame, text=pokemon.df[1:].to_string(),
+                                    )
             stats_label.grid(column=5, row=i + 1, padx=50)
 
         self.container.pack()
@@ -370,7 +396,11 @@ class Gui:
             widget.destroy()
 
 
-root = tk.Tk()
+root = tk_theme.ThemedTk()
+root.get_themes()
+# root.set_theme("radiance")
+root.set_theme("plastik")
+
 root.title("Pokemon Ranking")
 gui = Gui(root)
 root.mainloop()
