@@ -137,8 +137,9 @@ class Gui:
 
             cb = ttk.Checkbutton(self.scrollable_frame,
                                  variable=var,
-                                 # text=self.get_checkbutton_text(i),
-                                 image=pokemon_image
+                                 text=self.get_checkbutton_text(i),
+                                 image=pokemon_image,
+                                 compound='left'
                                  )
             cb.grid(sticky="w")  # to keep it aligned
             self.checkboxes[name] = cb
@@ -160,10 +161,10 @@ class Gui:
         self.open_options_window()
 
     def get_checkbutton_text(self, i):
-        res = f"{str(self.dataframe.iloc[i][0]).replace(' ', '') : ^110}"
+        res = f"{str(self.dataframe.iloc[i][0]).replace(' ', '') : ^80}"
         res += "\n\n"
         for j in range(len(self.stats)):
-            res += f"{self.stats[j]}: {str(self.dataframe.iloc[i][j + 1]) : ^5}" + "  "
+            res += f"      {self.stats[j]}:   {str(self.dataframe.iloc[i][j + 1])}" + " "
             if j == 2:
                 res += "\n"
         return res
