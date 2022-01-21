@@ -30,7 +30,7 @@ class Gui:
         self.container = tk.Frame(parent, bg='white')
         self.canvas = tk.Canvas(self.container, width=self.size, height=self.size, bg='white', highlightthickness=0)
 
-        self.set_data(20)
+        self.set_data(150)
 
         self.scrollable_frame = None
         self.add_scrollbar()
@@ -76,6 +76,37 @@ class Gui:
         self.BUTTON = ttk.Style()
         self.BUTTON.configure("Button.TButton", font=('Helvetica', 12), background='white')
 
+    def initizalize(self):
+
+        self.container = tk.Frame(self.parent, bg='white')
+        self.canvas = tk.Canvas(self.container, width=self.size, height=self.size, bg='white', highlightthickness=0)
+        self.add_scrollbar()
+        self.chosen_pokemons = []
+        self.checkboxes_var = {}
+        self.checkboxes_images = {}
+        self.checkboxes = {}
+
+        # second window
+        self.scale_buttons = {}
+        self.scale_comboboxes = {}
+        self.scale_var = {}
+        self.chosen_scale = None
+        self.subscale = None
+        self.clicked_buttons = {}
+
+        self.ranking = []
+        self.entry = None
+        self.experts = 1  # number of experts, default is 1
+        self.varMETHOD = tk.StringVar()
+        self.incomplete_data = False
+        self.incomplete_sub = False
+
+        # create 1st window
+        self.set_checkboxes()
+        self.set_ok_button(1)
+        self.container.pack()
+        self.canvas.pack(side="left", fill="both", expand=True)
+
     def set_data(self, how_many):
         data.data(how_many)
         df = pd.read_json('PokemonData.json')
@@ -93,6 +124,10 @@ class Gui:
         elif i == 2:  # after window with buttons and checkboxes, exp_num is the number of choosing expert
             button1 = tk.Button(self.parent, image=ok_button, command=lambda: self.get_scale(exp_num), borderwidth=0,
                                 bg='white')
+        elif i == 4:
+            button1 = tk.Button(self.parent, image=ok_button, command=lambda: self.start_again(), borderwidth=0,
+                                bg='white')
+
         else:  # after the option window, getting the number of experts and which method is to be used
             button1 = tk.Button(self.parent, image=ok_button, command=lambda: self.get_experts(), borderwidth=0,
                                 bg='white')
@@ -112,13 +147,6 @@ class Gui:
 
     # checkboxes in 1st window
     def set_checkboxes(self):
-
-        # columns =["Name"] + self.stats
-        # table = Table(self.scrollable_frame, columns=columns, sortable=False, drag_cols=False,
-        #               drag_rows=False, height = 20)
-        # for col in columns:
-        #     table.heading(col, text=col)
-        #     table.column(col, width=100, stretch=False, anchor='center')
 
         for i, name in enumerate(self.dataframe['Name']):
             if " " in name:
@@ -150,14 +178,20 @@ class Gui:
         #
         # table.grid()
 
-
     def get_pokemons(self):
+        picked = 0
         for index, row in self.dataframe.iterrows():
             name = row['Name']
             if " " in name:
                 continue
-            if self.checkboxes_var[name].get() and not any(pokemon.name == name for pokemon in self.chosen_pokemons):
-                self.chosen_pokemons.append(Pokemon(index, row))  # Pokemon class
+            if self.checkboxes_var[name].get():
+                picked +=1
+                if not any(pokemon.name == name for pokemon in self.chosen_pokemons):
+                    self.chosen_pokemons.append(Pokemon(index, row))  # Pokemon class
+        if picked < 2:
+            messagebox.showerror("ERROR", "Wybierz przynajmniej 2 pokemony")
+            return
+
         self.open_options_window()
 
     def get_checkbutton_text(self, i):
@@ -304,15 +338,14 @@ class Gui:
                     self.subscale[exp_num, idx, 0, 1] = None
                     self.subscale[exp_num, idx, 1, 0] = None
 
-        print(self.chosen_scale)
         # if all experts has spoken
         if (exp_num + 1) == self.experts:
-            print("go to ranking")
             self.start_ranking()
         else:  # cotinue opening scale windows
             self.open_scale_window(exp_num + 1)
 
     def open_options_window(self):
+
         self.delete_widgets()
         self.set_ok_button(3)
 
@@ -336,10 +369,10 @@ class Gui:
         s.configure('Entry.TLabel', font=('Helvetica', 14), background='white', focusthickness=3)
 
         label = ttk.Label(self.parent,
-                          text='Wpisz liczbę ekspertów', style = 'Entry.TLabel')
+                          text='Wpisz liczbę ekspertów', style='Entry.TLabel')
         label.place(x=200, y=300)
 
-        self.entry = ttk.Entry(self.parent, width = 20, font = ('Helvetica', 15))
+        self.entry = ttk.Entry(self.parent, width=20, font=('Helvetica', 15))
         self.entry.place(x=190, y=350)
 
     def start_ranking(self):
@@ -357,6 +390,8 @@ class Gui:
         self.container = tk.Frame(self.parent, bg='white')
         self.canvas = tk.Canvas(self.container, width=self.size, height=self.size, bg='white', highlightthickness=0)
         self.add_scrollbar()
+
+        self.set_ok_button(4)
 
         numbers = []
         sorted_ranking = sorted(self.ranking, reverse=True)  # sorting the ranking
@@ -387,6 +422,7 @@ class Gui:
         self.container.pack()
         self.canvas.pack(side="left", fill="both", expand=True)
 
+
     def delete_old_window(self):
         self.canvas.delete('all')
         for widget in self.parent.winfo_children():
@@ -395,7 +431,9 @@ class Gui:
     def delete_widgets(self):
         for widget in self.parent.winfo_children():
             widget.destroy()
-
+    def start_again(self):
+        self.delete_old_window()
+        self.initizalize()
 
 root = tk_theme.ThemedTk()
 root.get_themes()

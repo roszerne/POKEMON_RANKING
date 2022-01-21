@@ -53,18 +53,30 @@ class Ranking:
             for s in range(len(self.subscriteria)):
                 for i in range(2):
                     for j in range(2):
-                        if np.isnan(self.subscale[e,s,i,j]):
-                            self.subscale[e,s,i,j] = 1
-                        if np.isnan(self.subscale[0, s, i, j]) and self.experts > 1:
+                        if np.isnan(self.subscale[e, s, i, j]):
+                            self.subscale[e, s, i, j] = 1
+                        if np.isnan(self.subscale[0, s, i, j]):
                             self.subscale[0, s, i, j] = 1
                         self.subscale[0, s, i, j,] = self.subscale[0, s, i, j] * self.subscale[e, s, i, j]
+
+        if self.method == 'GMM':
+            self.incomplete_sub = False
+
+        if self.experts == 1:
+            for s in range(len(self.subscriteria)):
+                for i in range(2):
+                    for j in range(2):
+                        if np.isnan(self.subscale[0, s, i, j]):
+                            self.subscale[0, s, i, j] = 1
+                            self.subscale[0, s, j, i] = 1
+            self.incomplete_sub = False
 
         self.scale = self.scale[0, :, :]
         self.subscale = self.subscale[0, :, :, :]
         self.scale = np.power(self.scale, (1 / self.experts))
         self.subscale = np.power(self.subscale, (1 / self.experts))
-       # print("Aggregated Scale: ", self.scale)
-       # print("Aggregated Subscale: ", self.subscale)
+        # print("Aggregated Scale: ", self.scale)
+        # print("Aggregated Subscale: ", self.subscale)
 
     def endurence_subcrit(self):
         A = self.priorities[:, 0]  # HP
